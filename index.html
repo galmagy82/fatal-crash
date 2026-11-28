@@ -966,10 +966,10 @@ const SCENARIOS = [
     // 오른쪽 골목(15와 같은 골목)으로 자동 우회전한다. 골목 입구(보도가 이어지는 자리)의 횡단보도를 사람이 건너오고,
     // 기다렸다 출발하는 순간 내 뒤쪽 보도를 따라 달려온 전동 킥보드가 골목 입구를 가로지른다 (거울이 없어 미리 볼 수 없다)
     road: { type: 'city4', lanes: 3, half: 10.5, flat: 14, xMin: 0.9, xMax: 9.6, hillStart: 1e6, hillEnd: 1e6 + 1, crest: 1e6, H: 0,
-      zoneStart: -1e4, zoneEnd: 1e4, goal: 1e4, crosswalk: 120, sideRoad: { s: 140, w: 4.5, len: 120 }, mouthCrosswalk: true },
+      zoneStart: -1e4, zoneEnd: 1e4, goal: 1e4, crosswalk: 120, sideRoad: { s: 140, w: 7, len: 120, walk: 2.5, twoWay: true }, mouthCrosswalk: true },   // 골목: 왕복 2차로(폭 7m) + 양쪽 인도 2.5m
     xsig: { yellowAt: 1e9, redAt: 1e9, pedOn: 1e9, pedFlash: 1e9, pedOff: 1e9, greenAt: 1e9 },   // 신호가 바뀌지 않는다: 차량 녹색, 보행자 빨간불
-    // 3차로(x 8.75)를 시속 30km로 출발. 골목 바로 앞에서 타원으로 우회전(세로 7m, 가로 4.5m) → 골목 가운데(s 140)를 따라 +x로. 브레이크만 된다
-    player: { s: 60, v: 8.33, x: 8.75, path: { kind: 'alley', s0: 60, x0: 8.75, approach: 73, rx: 4.5, rs: 7, vcap: 8.33, v20: 5.56, vturn: 4.0, vexit: 8.33, goalU: 73 + 9 + 70 } },
+    // 3차로(x 8.75)를 시속 30km로 출발. 골목 바로 앞에서 타원으로 우회전(세로 7m, 가로 5m) → 골목 오른쪽 차로(s 138.25)를 따라 +x로. 브레이크만 된다
+    player: { s: 60, v: 8.33, x: 8.75, path: { kind: 'alley', s0: 60, x0: 8.75, approach: 71.25, rx: 5, rs: 7, vcap: 8.33, v20: 5.56, vturn: 4.0, vexit: 8.33, goalU: 71.25 + 10 + 70 } },
     truck: { type: 'truck', label: '화물차', parked: true, s: 5000, x: 40, up: 0, flat: 0, down: 0, mass: 6, hl: 5, hw: 1.25, height: 3.5 },
     oncoming: [
       { label: '2차로 차', fwd: true, s: 95, x: 5.25, v: 12, color: 0x3c4a3e },
@@ -1659,6 +1659,8 @@ function buildRoad() {
     } else { along(walk, -HW - 3, -HW - 0.2, 0.15); M ? alongR(walk, HW + 0.2, HW + 3, 0.15, 2, M.s0 - M.len * Math.cos(M.ang) - 4, M.s1 + M.taper) : SR ? alongR(walk, HW + 0.2, HW + 3, 0.15, 2, SR.s - SR.w / 2, SR.s + SR.w / 2) : along(walk, HW + 0.2, HW + 3, 0.15); }   // 보도 (15: 골목 입구는 끊는다)
     along(white, -HW + 0.05, -HW + 0.2, 0.02); E ? ribbon(white, -320, E.s0, HW - 0.2, HW - 0.05, 0.02) : M ? alongR(white, HW - 0.2, HW - 0.05, 0.02, 2, M.s0, M.s1) : SR ? alongR(white, HW - 0.2, HW - 0.05, 0.02, 2, SR.s - SR.w / 2, SR.s + SR.w / 2) : along(white, HW - 0.2, HW - 0.05, 0.02);
     if (SR) ribbon(asphalt, SR.s - SR.w / 2, SR.s + SR.w / 2, HW + 0.2, HW + SR.len, 0, SR.w);   // 15: 골목 바닥
+    if (SR && SR.walk) [SR.s - SR.w / 2 - SR.walk, SR.s + SR.w / 2].forEach(a => ribbon(walk, a, a + SR.walk, HW + 3, HW + SR.len, 0.15, SR.walk));   // 16: 골목 양쪽 인도
+    if (SR && SR.twoWay) [-0.25, 0.1].forEach(d => ribbon(yellow, SR.s + d, SR.s + d + 0.15, HW + 3.5, HW + SR.len, 0.02, 0.15));   // 16: 골목 중앙선 (노란 겹선)
     if (SR && R.mouthCrosswalk) for (let q = SR.s - SR.w / 2 + 0.25; q < SR.s + SR.w / 2 - 0.3; q += 1.0) ribbon(white, q, q + 0.5, HW + 0.5, HW + 2.9, 0.02, 0.5);   // 16: 골목 입구 횡단보도 (보도가 이어지는 자리)
     if (E) {
       const xc = q => 8.75 + exitOff(q);
@@ -2071,7 +2073,7 @@ function buildSideRoadProps() {
   [-1, 1].forEach(sg => {
     for (let xa = x0; xa < x1 - 4; ) {
       const wdt = 8 + r() * 6, xb = Math.min(x1, xa + wdt), hh = 2.9 * (2 + Math.floor(r() * 3)) + 0.4;
-      const near = sg < 0 ? SR.s - SR.w / 2 - 0.3 : SR.s + SR.w / 2 + 0.3, far = near + sg * 12;
+      const near = sg < 0 ? SR.s - SR.w / 2 - (SR.walk || 0) - 0.3 : SR.s + SR.w / 2 + (SR.walk || 0) + 0.3, far = near + sg * 12;
       building(grp, Math.min(near, far), Math.max(near, far), xa, xb, hh, kinds[Math.floor(r() * kinds.length)], r() < 0.4);
       xa = xb + 0.6 + r() * 0.8;
     }
