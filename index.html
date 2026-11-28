@@ -958,44 +958,11 @@ const SCENARIOS = [
     hint: '누르고 있는 동안 왼쪽·오른쪽으로 움직이고, 떼면 그 자리를 유지합니다.',
     replay: 'plan', sightLines: false,
   },
-  {
-    id: '16', title: '우회전 후 횡단보도', ready: true,
-    info: '도심 왕복 4차로 → 오른쪽 왕복 2차로 · 한낮',
-    mission: { time: 30 }, daylight: 'noon',
-    // 큰길(가로 도로, 왕복 4차로) 2차로를 서행하다 횡단보도(차량 녹색, 보행자 빨간불)를 지나 오른쪽 골목길(세로 도로, 왕복 2차로)로 자동 우회전.
-    // 회전하자마자 골목길을 가로지르는 신호 없는 횡단보도에 사람이 건너오고 있다. 기다렸다 출발하는 순간, 내 쪽 인도를 따라 뒤에서 달려온 자전거가 횡단보도로 뛰어든다
-    road: { type: 'city4', half: 3.5, crossHalf: 7, lanes: 1, flat: 9, xMin: -2.6, xMax: 2.6, hillStart: 1e6, hillEnd: 1e6 + 1, crest: 1e6, H: 0,
-      zoneStart: -1e4, zoneEnd: 1e4, goal: 180, intersection: 100, tee: true, crossCars: false, noIxProps: true,
-      teeCrosswalk: 109.5, midCrosswalk: 20 },   // 골목 입구 횡단보도(세로 도로를 가로지름, s 중심), 큰길 횡단보도(가로 도로를 가로지름, x 중심)
-    fixedLights: { car: 'green', ped: 'stop' },   // 큰길 횡단보도: 차량 녹색, 보행자 빨간불 그대로
-    // 큰길 2차로(가로 도로 s 105.25)에서 시속 20km로 서행, 26m 다가와 타원으로 우회전해 골목길 오른쪽 차로(x 1.75)로. 회전 중 시속 14km 이하. 브레이크만 된다
-    player: { s: 105.25, v: 5.56, x: 32, path: { kind: 'right', ix: 100, approach: 25.75, rx: 4.5, rs: 3.5, toX: 1.75, vcap: 5.56, v20: 5.56, vturn: 4.0, boost: 1, boostT: 0 } },
-    truck: { type: 'truck', label: '화물차', parked: true, s: 5000, x: 40, up: 0, flat: 0, down: 0, mass: 6, hl: 5, hw: 1.25, height: 3.5 },
-    oncoming: [
-      // 큰길 1차로를 같은 방향(-x)으로 지나가는 차들 (교차로를 그대로 건너간다)
-      { label: '큰길 차', cross: true, s: 101.75, x: 45, v: 11 }, { label: '큰길 차', cross: true, s: 101.75, x: 95, v: 11 },
-    ],
-    peds: [
-      // 골목 입구 횡단보도: 맞은편(왼쪽) 인도에서 내 쪽으로 건너오는 사람 (초속 1.2m)
-      { label: '보행자', title: '우회전 후 횡단보도 사고', s: 109.5, x0: -6.0, xEnd: 6.0, dir: 1, v: 1.2, startAt: 1.0, scale: 1, stay: true, cap: '골목길 횡단보도를 건너오는 사람이 있습니다.' },
-      // 전동 킥보드: 내 쪽 인도(큰길 북쪽 보도)를 따라 뒤에서 초속 6m(시속 약 22km)로 달려와 그대로 횡단보도를 건넌다 (거울이 없어 운전석에서는 미리 볼 수 없다)
-      { label: '전동 킥보드', title: '우회전 후 킥보드 사고', bike: true, kick: true, s: 109.0, x0: 1.75 + 6 * 10, xEnd: -40, dir: -1, v: 6.0, scale: 1, stay: true, coat: 0x2f6e9e, pants: 0x2b2f36, cap: '오른쪽 인도에서 전동 킥보드가 빠르게 횡단보도로 들어왔습니다.' },
-    ],
-    capPedSeen: true,
-    lessons: [
-      '우회전 직후에는 바로 횡단보도가 있습니다. 회전하면서 미리 속도를 줄이세요.',
-      '보행자가 다 건넜다고 끝이 아닙니다. 출발 전에 오른쪽 뒤에서 오는 전동 킥보드·자전거를 한 번 더 확인하세요.',
-      '실제 차에서는 오른쪽 사이드미러와 어깨 너머로 확인합니다. 이 게임에는 거울이 없어 볼 수 없었습니다.',
-    ],
-    thumb: { s: 105.25, x: 32, lead: 5000 },
-    hint: '우회전은 자동입니다. 브레이크로 속도를 조절하세요.',
-    replay: 'plan', sightLines: false,
-  },
-  { id: '17', title: '노란불 교차로' },
-  { id: '18', title: '스쿨존 골목' },
-  { id: '19', title: '운전 중 메시지' },
-  { id: '20', title: '빗길 커브' },
-  { id: '21', title: '야간 무단횡단' },
+  { id: '16', title: '노란불 교차로' },
+  { id: '17', title: '스쿨존 골목' },
+  { id: '18', title: '운전 중 메시지' },
+  { id: '19', title: '빗길 커브' },
+  { id: '20', title: '야간 무단횡단' },
 ];
 let SC = SCENARIOS[0], R = SC.road, MISSION_T = SC.mission.time;
 const V_MAX = 50;                        // 최고속도 180km/h (m/s)
@@ -1132,9 +1099,7 @@ function buildWorld() {
   if (R.type === 'city4') {
     if (R.crosswalk && SC.xsig) buildSignalCrosswalk();   // 신호 있는 횡단보도 (차량 신호등 + 보행자 신호등)
     else if (R.crosswalk) { addCrosswalkSign(R.crosswalk - 4, R.half + 1.2); addCrosswalkSign(R.crosswalk + 4, -R.half - 1.2, true); }
-    if (R.intersection && !R.noIxProps) buildIntersectionProps();
-    if (R.midCrosswalk) buildMidCrosswalkSignals();
-    if (R.tee) buildTeeProps();
+    if (R.intersection) buildIntersectionProps();
     if (R.merge) addMergeSign(R.merge.s0 - 45, R.half + 2.4);
     if (R.laneDrop) buildLaneDropProps();
     if (R.exit) buildExitProps();
@@ -1278,8 +1243,7 @@ function bank(s, x) {
     if (kc && x * kc > 0 && ax > F0) { const u = clamp((ax - F0) / 8, 0, 1), w = Math.min(1, Math.abs(kc) * 170); var hillIn = R.cutHill * w * u * u * (3 - 2 * u); }
   }
   const F = R.flat || 6, ax = Math.abs(x); if (ax <= F) return 0; const d = ax - F;
-  let fI = R.intersection ? clamp((Math.abs(s - R.intersection) - XHW() - 4) / 40, 0, 1) : 1;
-  if (R.tee && s < R.intersection) fI = Math.min(fI, clamp((R.intersection - XHW() - 6 - s) / 40, 0, 1));   // T자: 큰길 뒤쪽도 평평하게   // 가로 도로 옆은 평평하게
+  let fI = R.intersection ? clamp((Math.abs(s - R.intersection) - R.half - 4) / 40, 0, 1) : 1;   // 가로 도로 옆은 평평하게
   if (R.merge && x > 0) { const M = R.merge, a = M.s0 - M.len * Math.cos(M.ang) - 30, b = M.s1 + M.taper + 20; fI *= clamp(Math.max(a - s, s - b, 0) / 40, 0, 1); }   // 합류 진입로 옆도
   if (R.sideRoad && x > 0) fI *= clamp((Math.abs(s - R.sideRoad.s) - 30) / 30, 0, 1);   // 15: 골목과 양옆 건물 자리는 평평하게
   if (R.exit && x > 0) fI *= clamp((R.exit.s0 - 40 - s) / 40, 0, 1);   // 14: 출구가 갈라져 나가는 오른쪽은 평평하게
@@ -1645,16 +1609,14 @@ function buildRoad() {
   } else if (R.type === 'city4') {   // 왕복 4차로 도심 도로 (횡단보도 또는 교차로)
     const HW = R.half, cw = R.crosswalk, ix = R.intersection;
     // 교차로가 있으면 그 구간(가로 도로 폭)에서는 보도·차선을 끊는다
-    const XH = XHW(), gapA = ix ? ix - XH - 0.2 : 1e9, gapB = ix ? ix + XH + 0.2 : 1e9;
-    const S0 = R.tee ? gapB : -320;   // 16(T자): 세로 도로는 큰길 건너편에서 시작한다 (뒤쪽 길 없음)
+    const gapA = ix ? ix - HW - 0.2 : 1e9, gapB = ix ? ix + HW + 0.2 : 1e9;
     const along = (arr, x0, x1, y, step) => {
       if (!ix) return ribbon(arr, -320, 1720, x0, x1, y, step);
-      if (!R.tee) ribbon(arr, -320, gapA, x0, x1, y, step); ribbon(arr, gapB, 1720, x0, x1, y, step);
+      ribbon(arr, -320, gapA, x0, x1, y, step); ribbon(arr, gapB, 1720, x0, x1, y, step);
     };
     const M = R.merge;   // 오른쪽 합류: 진입로 → 가속 차로 → 끝에서 좁아짐. 그 구간은 오른쪽 보도·가장자리선을 끊는다
     const alongR = (arr, x0, x1, y, step, a, b) => { if (!M && !R.sideRoad) return along(arr, x0, x1, y, step); if (ix && !M) { [[-320, Math.min(a, ix - HW - 0.2)], [Math.max(b, -320), ix - HW - 0.2], [ix + HW + 0.2, 1720]].forEach(([p0, p1]) => { if (p1 > p0 && !(p0 < b && p1 > a)) ribbon(arr, p0, p1, x0, x1, y, step); }); return; } ribbon(arr, -320, a, x0, x1, y, step); ribbon(arr, b, 1720, x0, x1, y, step); };
-    ribbon(asphalt, R.tee ? gapA : -320, 1720, -HW - 0.2, HW + 0.2, 0);
-    if (R.tee) ribbon(walk, gapA - 2.8, gapA, -HW - 0.2, HW + 0.2, 0.15);   // T자: 큰길 건너편(남쪽) 보도는 끊기지 않는다
+    ribbon(asphalt, -320, 1720, -HW - 0.2, HW + 0.2, 0);
     const E = R.exit;   // 14: 오른쪽 출구 (3차로가 갈라져 나간다)
     const SR = R.sideRoad;   // 15: 오른쪽 골목
     if (R.noWalk) {   // 도시고속도로: 보도 대신 포장된 갓길 (오른쪽은 출구가 갈라지는 곳까지)
@@ -1749,15 +1711,8 @@ function buildRoad() {
     } else { along(yellow, -0.24, -0.1, 0.02); along(yellow, 0.1, 0.24, 0.02); }
     for (let k = -320; k < 1720; k += 10) {   // 차로 경계 점선 (횡단보도·교차로 부근 제외)
       if (cw && k + 3 > cw - 12 && k < cw + 6) continue;
-      if (ix && k + 3 > ix - XH - 12 && k < ix + XH + 12) continue;
-      if (R.tee && k < gapB) continue;
+      if (ix && k + 3 > ix - HW - 12 && k < ix + HW + 12) continue;
       for (let L = 1; L < (R.lanes || 2); L++) { const lx = 3.5 * L; ribbon(white, k, k + 3, -lx - 0.075, -lx + 0.075, 0.02, 1); if (!(R.laneDrop && k + 3 > R.laneDrop.s0) && !(R.exit && L === 2 && k + 3 > R.exit.solid)) ribbon(white, k, k + 3, lx - 0.075, lx + 0.075, 0.02, 1); }   // 줄어드는 차로: 좁아지는 곳부터 1·2차로 점선 없음   // 편도 2차로면 ±3.5, 3차로면 ±7도
-    }
-    if (R.teeCrosswalk) { const tc = R.teeCrosswalk; for (let x = -HW + 0.4; x < HW - 0.4; x += 1.0) ribbon(white, tc - 2, tc + 2, x, x + 0.5, 0.02, 1); }   // 16: 골목 입구 신호 없는 횡단보도
-    if (R.midCrosswalk && ix) {   // 16: 큰길(가로 도로)을 가로지르는 신호 횡단보도 + 내 방향 정지선
-      const mc = R.midCrosswalk, A0 = ix - XH - 0.2, B0 = ix + XH + 0.2;
-      for (let q = A0 + 0.4; q < B0 - 0.4; q += 1.0) ribbon(white, q, q + 0.5, mc - 2, mc + 2, 0.02, 0.5);
-      ribbon(white, ix + 0.3, ix + XH - 0.1, mc + 3.0, mc + 3.4, 0.02, 0.4);
     }
     if (cw) {
       for (let x = -HW + 0.4; x < HW - 0.4; x += 1.0) ribbon(white, cw - 2, cw + 2, x, x + 0.5, 0.02, 1);   // 횡단보도 얼룩무늬
@@ -1765,7 +1720,7 @@ function buildRoad() {
       ribbon(white, cw + 5.0, cw + 5.4, -HW + 0.1, -0.3, 0.02, 0.4);  // 맞은편 정지선
     }
     if (ix) {   // 가로지르는 왕복 4차로 (교차로)
-      const A = ix - XH - 0.2, B = ix + XH + 0.2, far = 320;
+      const A = ix - HW - 0.2, B = ix + HW + 0.2, far = 320;
       ribbon(asphalt, A, B, -far, -HW - 0.2, 0, 2); ribbon(asphalt, A, B, HW + 0.2, far, 0, 2);
       [[-far, -HW - 0.2], [HW + 0.2, far]].forEach(([x0, x1]) => {
         ribbon(walk, A - 2.8, A, x0, x1, 0.15, 0.7); ribbon(walk, B, B + 2.8, x0, x1, 0.15, 0.7);   // 가로 도로 보도
@@ -1776,10 +1731,10 @@ function buildRoad() {
         ribbon(white, ix - 3.575, ix - 3.425, sg > 0 ? x : -x - 3, sg > 0 ? x + 3 : -x, 0.02, 0.15);
         ribbon(white, ix + 3.425, ix + 3.575, sg > 0 ? x : -x - 3, sg > 0 ? x + 3 : -x, 0.02, 0.15);
       });
-      if (!R.tee) ribbon(white, ix - XH - 3.6, ix - XH - 3.2, 0.3, HW - 0.1, 0.02, 0.4);    // 내 방향 정지선
-      ribbon(white, ix + XH + 3.2, ix + XH + 3.6, -HW + 0.1, -0.3, 0.02, 0.4);  // 맞은편 정지선
-      if (!R.tee) { ribbon(white, ix + 0.3, ix + XH - 0.1, HW + 3.0, HW + 3.4, 0.02, 0.4);    // 가로 도로 정지선 (양쪽)
-        ribbon(white, ix - XH + 0.1, ix - 0.3, -HW - 3.4, -HW - 3.0, 0.02, 0.4); }
+      ribbon(white, ix - HW - 3.6, ix - HW - 3.2, 0.3, HW - 0.1, 0.02, 0.4);    // 내 방향 정지선
+      ribbon(white, ix + HW + 3.2, ix + HW + 3.6, -HW + 0.1, -0.3, 0.02, 0.4);  // 맞은편 정지선
+      ribbon(white, ix + 0.3, ix + HW - 0.1, HW + 3.0, HW + 3.4, 0.02, 0.4);    // 가로 도로 정지선 (양쪽)
+      ribbon(white, ix - HW + 0.1, ix - 0.3, -HW - 3.4, -HW - 3.0, 0.02, 0.4);
     }
     if (walk.length) ribbonMesh(walk, new THREE.MeshLambertMaterial({ color: 0x777674, map: WALK_TEX }));
     if (!LOOK_OLD && walk.length) curbFaces(walk);   // 인도 옆면(연석): 떠 보이지 않게
@@ -1838,11 +1793,10 @@ function buildTrees() {
   while (k < N) {
     const s = r() * 1900 - 260, side = r() < 0.5 ? -1 : 1, x = side * ((R.flat || 6) + 3 + r() * r() * 140);
     if (s > R.goal - 20 && s < R.goal + 120 && Math.abs(x) < 50) continue;
-    if (R.intersection && Math.abs(s - R.intersection) < XHW() + 6) continue;   // 가로 도로 위
+    if (R.intersection && Math.abs(s - R.intersection) < R.half + 6) continue;   // 가로 도로 위
     if (R.merge && x > 0 && x < R.half + 80 && s > R.merge.s0 - R.merge.len - 30 && s < R.merge.s1 + R.merge.taper + 20) continue;   // 진입로 위
     if (R.exit && x > 0 && s > R.exit.s0 - 30 && x < 8.75 + exitOff(s) + 12) continue;   // 14: 출구 차로 위
     if (R.sideRoad && x > 0 && Math.abs(s - R.sideRoad.s) < 20 && x < R.half + R.sideRoad.len + 4) continue;   // 15: 골목·건물 자리
-    if (R.tee && ((x > 6 && x < 66 && s > 109 && s < R.goal + 10) || (x < -6 && x > -24 && s > 136 && s < R.goal + 10))) continue;   // 16: 상가 건물 자리
     const y = groundY(s, x), H = 5 + r() * 7, rad = 1.3 + r() * 1.5, leafy = r() < 0.4;
     e.set(0, r() * Math.PI * 2, 0); q.setFromEuler(e);   // 나무마다 조금씩 돌려 같은 모양이 반복돼 보이지 않게
     wpos(s, x, y + 0.9, p); sc.set(1, leafy ? 2.6 : 1.8, 1); m.compose(p, q, sc); trunk.setMatrixAt(k, m);
@@ -1869,11 +1823,10 @@ function buildTreesOld() {   // 예전 나무 (?look=old)
   while (k < N) {
     const s = r() * 1900 - 260, side = r() < 0.5 ? -1 : 1, x = side * ((R.flat || 6) + 3 + r() * r() * 140);
     if (s > R.goal - 20 && s < R.goal + 120 && Math.abs(x) < 50) continue;
-    if (R.intersection && Math.abs(s - R.intersection) < XHW() + 6) continue;   // 가로 도로 위
+    if (R.intersection && Math.abs(s - R.intersection) < R.half + 6) continue;   // 가로 도로 위
     if (R.merge && x > 0 && x < R.half + 80 && s > R.merge.s0 - R.merge.len - 30 && s < R.merge.s1 + R.merge.taper + 20) continue;   // 진입로 위
     if (R.exit && x > 0 && s > R.exit.s0 - 30 && x < 8.75 + exitOff(s) + 12) continue;   // 14: 출구 차로 위
     if (R.sideRoad && x > 0 && Math.abs(s - R.sideRoad.s) < 20 && x < R.half + R.sideRoad.len + 4) continue;   // 15: 골목·건물 자리
-    if (R.tee && ((x > 6 && x < 66 && s > 109 && s < R.goal + 10) || (x < -6 && x > -24 && s > 136 && s < R.goal + 10))) continue;   // 16: 상가 건물 자리
     const y = groundY(s, x), H = 5 + r() * 7, rad = 1.3 + r() * 1.5;
     wpos(s, x, y + 0.9, p); sc.set(1, 1.8, 1); m.compose(p, q, sc); trunk.setMatrixAt(k, m);
     wpos(s, x, y + 1.6 + H * 0.4, p); sc.set(rad, H * 0.8, rad); m.compose(p, q, sc); crown.setMatrixAt(k, m);
@@ -1888,7 +1841,7 @@ function buildTreesOld() {   // 예전 나무 (?look=old)
 let ROAD_POSTS = [];
 function roadPostList() {
   const out = [], ix = R.intersection, T = R.tunnel, M = R.merge;
-  const skip = ss => (ix && Math.abs(ss - ix) < XHW() + 4) || (R.tee && ss < ix) || (R.crosswalk && Math.abs(ss - R.crosswalk) < 8) || (T && ss > T.s0 - 4 && ss < T.s1 + 4);
+  const skip = ss => (ix && Math.abs(ss - ix) < R.half + 4) || (R.crosswalk && Math.abs(ss - R.crosswalk) < 8) || (T && ss > T.s0 - 4 && ss < T.s1 + 4);
   if (R.type === 'city4') {
     for (let i = 0; i < 50; i++) [[1, 0], [-1, 20]].forEach(([sg, off]) => {
       let ss = -200 + i * 40 + off; if (skip(ss)) ss += 14; if (skip(ss)) return;
@@ -1957,22 +1910,16 @@ function texFrom(w, hh, draw) { const c = document.createElement('canvas'); c.wi
 // 교차로 소품: 신호등(나와 맞은편은 녹색, 가로 도로는 빨간색), 비보호 좌회전 표지, 빨간불에 서 있는 가로 도로 차들
 // 신호등. role: 'main'(나와 맞은편), 'cross'(가로 도로). 시나리오에 신호 일정(SC.signal)이 있으면 시간에 따라 색이 바뀐다
 let LIGHTS = [];
-function trafficLight(s, x, yaw, lit, unprotected, role, armLen) {
+function trafficLight(s, x, yaw, lit, unprotected, role) {
   const grp = new THREE.Group(), HW = R.half;
   // 가로형 신호등: 길가 기둥에서 도로 위로 팔을 뻗어, 신호등이 차로 위(차로 경계 3.5m 지점)에 오게 한다
-  // (옆 차로의 큰 차에 가려지지 않도록). 안쪽 좌표에서 -x가 도로 쪽이다. armLen: 팔 길이를 직접 정할 때 (16 가로 도로 신호등)
-  const mast = lambert(0x6b6f74), armL = armLen ?? Math.abs(x) - 3.5;
+  // (옆 차로의 큰 차에 가려지지 않도록). 안쪽 좌표에서 -x가 도로 쪽이다
+  const mast = lambert(0x6b6f74), armL = Math.abs(x) - 3.5;
   ROAD_POSTS.push({ s, x, r: 0.14, name: '신호등' });   // 사고 후 차·사람이 기둥을 뚫지 않게 (postHits)
   const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 6.4, 8), mast); post.position.y = 3.2; grp.add(post);
   grp.add(box(armL + 0.3, 0.14, 0.14, mast, -armL / 2, 6.1, 0));
   const head = new THREE.Group(); head.position.set(-armL, 5.75, 0); grp.add(head);
   head.add(box(0.05, 0.4, 0.05, mast, 0, 0.3, 0));   // 팔에 매단 고리
-  if (R.midCrosswalk && role === 'main') {   // 16: 신호등 왼쪽에 '횡단보도' 표지 (파란 네모 + 흰 세모 + 걷는 사람)
-    const st = texFrom(64, 80, g => { g.fillStyle = '#1f5fb8'; g.fillRect(0, 0, 64, 80); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(32, 6); g.lineTo(58, 52); g.lineTo(6, 52); g.closePath(); g.fill();
-      g.fillStyle = '#111'; g.beginPath(); g.arc(32, 22, 4, 0, 7); g.fill(); g.fillRect(29, 27, 6, 13); g.fillRect(24, 40, 5, 9); g.fillRect(35, 40, 5, 9);
-      g.fillStyle = '#fff'; g.font = 'bold 13px "Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif'; g.textAlign = 'center'; g.fillText('횡단보도', 32, 72); });
-    const sg = new THREE.Mesh(new THREE.PlaneGeometry(0.75, 0.94), new THREE.MeshBasicMaterial({ map: st })); sg.position.set(-1.25, 0.05, 0.17); head.add(sg);
-  }
   const arrowLamp = !!R.leftArrow && role === 'main';   // 좌회전 화살표 등 (오른쪽 끝에 하나 더)
   head.add(box(arrowLamp ? 1.65 : 1.25, 0.42, 0.32, lambert(0x1b1d20), arrowLamp ? 0.2 : 0, 0, 0));
   const parts = {};
@@ -2022,59 +1969,6 @@ function buildIntersectionProps() {
    [ix - 1.75, -HW - 6.0, -Math.PI / 2], [ix - 5.25, -HW - 6.4, -Math.PI / 2], [ix - 5.25, -HW - 12.8, -Math.PI / 2]].forEach(([cs, cx, yaw], k) => {
     const v = makeCar(cols[k % 4], true); scene.remove(v.outer); world.add(v.outer); placeVehicle(v, cs, cx, false, yaw);
   });
-}
-// 16: 큰길 횡단보도 신호. 내 방향(-x로 달림) 차량 신호등은 횡단보도 지나 북쪽 보도에서 팔을 뻗고, 보행자 신호등은 횡단보도 양끝
-function buildMidCrosswalkSignals() {
-  const ix = R.intersection, XH = XHW(), mc = R.midCrosswalk; LIGHTS = [];
-  const sP = ix + XH + 1.4;
-  trafficLight(sP, mc - 4, Math.PI / 2, 'green', false, 'main', sP - (ix + 3.5));
-  pedSignal(ix - XH - 1.0, mc, 0); pedSignal(ix + XH + 1.0, mc, Math.PI);
-}
-// 16: 사진 속 동네처럼. 골목 오른쪽 모퉁이에 간판이 빼곡한 3층 상가, 골목·큰길을 따라 2~4층 상가, 골목 왼쪽은 나무(숲이 그대로) 뒤로 건물,
-// 큰길 건너편 멀리 아파트 단지. 건물은 리플레이에서 숨기고 건물 터만 보인다 (alleyReplayView)
-function buildTeeProps() {
-  const ix = R.intersection, XH = XHW(), HW = R.half, grp = new THREE.Group(), far = new THREE.Group(); world.add(grp, far);
-  const r = rng(1616), kinds = ['beige', 'tile', 'grey', 'brick'], N0 = ix + XH + 3 + 1.5, W0 = HW + 3 + 1.5;   // 큰길 북쪽 보도 뒤 / 골목 오른쪽 보도 뒤
-  const signs = [['부동산', '#1f7a4d'], ['HAIR', '#2c6fb3'], ['치킨', '#d35400'], ['약국', '#27ae60'], ['학원', '#c49a00'], ['편의점', '#2f8f9d'], ['분식', '#c0392b'], ['세탁', '#3b5998'], ['카페', '#6d4c41'], ['안경', '#8e44ad'], ['수학', '#d4a017'], ['치과', '#2980b9']];
-  let sk = 0; const nextSign = () => signs[sk++ % signs.length];
-  // face 's': 남쪽(큰길 쪽, s가 작은 쪽)을 보는 벽 / 'x': 서쪽(골목 쪽, x가 작은 쪽)을 보는 벽
-  const sign = (face, a, b, wall, y, w, h) => {
-    const [t, c] = nextSign(), m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), shopSign(t, c));
-    if (face === 's') m.position.set((a + b) / 2, y, -(wall - 0.06)); else { m.rotation.y = -Math.PI / 2; m.position.set(wall - 0.06, y, -(a + b) / 2); }
-    grp.add(m);
-  };
-  const glass = (face, a, b, wall) => { const w = Math.abs(b - a) - 0.8, m = new THREE.Mesh(new THREE.PlaneGeometry(w, 2.2), basic(0xbfd3d8));
-    if (face === 's') m.position.set((a + b) / 2, 1.2, -(wall - 0.05)); else { m.rotation.y = -Math.PI / 2; m.position.set(wall - 0.05, 1.2, -(a + b) / 2); } grp.add(m); };
-  // 모퉁이 상가 (3층, 1·2·3층 벽마다 간판)
-  const cA = N0, cB = N0 + 17, cX0 = W0, cX1 = W0 + 18;
-  building(grp, cA, cB, cX0, cX1, 3 * 2.9 + 0.4, 'beige', false);
-  glass('s', cX0, cX1, cA); glass('x', cA, cB, cX0);
-  [[cX0 + 0.5, cX0 + 6], [cX0 + 6.5, cX0 + 12], [cX0 + 12.5, cX1 - 0.5]].forEach(([a, b], k) => [2.75, 4.6, 7.5].forEach(y => sign('s', a, b, cA, y + (k % 2) * 0.15, b - a - 0.4, y > 7 ? 0.9 : 1.0)));
-  [[cA + 0.5, cA + 8], [cA + 8.5, cB - 0.5]].forEach(([a, b]) => [2.75, 4.6, 7.5].forEach(y => sign('x', a, b, cX0, y, b - a - 0.4, 1.0)));
-  grp.add(box(cX1 - cX0, 0.12, 1.4, lambert(0x2f8f9d), (cX0 + cX1) / 2, 3.35, -(cA - 0.7)));   // 1층 차양
-  // 골목 오른쪽을 따라 상가 (2~4층)
-  for (let a = cB + 1.2; a < R.goal + 5; ) {
-    const b = a + 9 + r() * 5, fl = 2 + Math.floor(r() * 3), hh = fl * 2.9 + 0.4;
-    building(grp, a, b, W0, W0 + 11 + r() * 3, hh, kinds[Math.floor(r() * 4)], false);
-    glass('x', a, b, W0); sign('x', a + 0.6, b - 0.6, W0, 2.75, b - a - 1.6, 0.9); if (fl > 2 && r() < 0.6) sign('x', a + 1, b - 1, W0, 5.6, b - a - 2.4, 0.9);
-    a = b + 0.6 + r();
-  }
-  // 큰길 북쪽을 따라 상가 (모퉁이 상가 오른쪽, 킥보드가 달려오는 보도 뒤)
-  for (let x0 = cX1 + 1.0; x0 < 64; ) {
-    const x1 = x0 + 9 + r() * 5, fl = 2 + Math.floor(r() * 3), hh = fl * 2.9 + 0.4;
-    building(grp, N0, N0 + 12 + r() * 3, x0, x1, hh, kinds[Math.floor(r() * 4)], false);
-    glass('s', x0, x1, N0); sign('s', x0 + 0.6, x1 - 0.6, N0, 2.75, x1 - x0 - 1.6, 0.9); if (fl > 2 && r() < 0.6) sign('s', x0 + 1, x1 - 1, N0, 5.6, x1 - x0 - 2.4, 0.9);
-    x0 = x1 + 0.6 + r();
-  }
-  // 골목 왼쪽: 모퉁이는 나무, 그 뒤로 건물 몇 채
-  for (let a = 138; a < R.goal + 5; ) { const b = a + 10 + r() * 4; building(grp, a, b, -W0 - 12 - r() * 3, -W0, 2.9 * (2 + Math.floor(r() * 3)) + 0.4, kinds[Math.floor(r() * 4)], false); a = b + 0.8; }
-  // 큰길 건너편 멀리 아파트 단지 (15층 안팎)
-  for (let k = 0; k < 9; k++) { const ss = -10 - (k % 3) * 45 - r() * 10, x = -120 + k * 30 + r() * 10; building(far, ss - 14, ss, x, x + 26, 40 + r() * 12, r() < 0.5 ? 'tile' : 'grey', false); }
-  // 리플레이: 건물은 숨기고 건물 터(30cm 회색 판)만
-  const foot = new THREE.Group(), plateMat = lambert(0x5d6066);
-  grp.children.forEach(m => { const gp = m.geometry && m.geometry.parameters; if (!gp || !(gp.width >= 3) || !(gp.depth >= 3) || !(gp.height >= 3)) return;
-    const pl = new THREE.Mesh(new THREE.BoxGeometry(gp.width - 0.3, 0.3, gp.depth - 0.3), plateMat); pl.position.set(m.position.x, 0.15, m.position.z); foot.add(pl); });
-  foot.visible = false; world.add(foot); alleyBld = grp; alleyHide = far; alleyFoot = foot;
 }
 // 신호 있는 횡단보도: 차량 신호등(가로형) 두 개 + 횡단보도 양끝 보행자 신호등. 색은 updateLights가 SC.xsig 일정대로 바꾼다
 function buildSignalCrosswalk() {
@@ -2691,7 +2585,7 @@ function makePedOld() {   // 예전 나무토막 인형 (?look=old). 보행자: 
 const pedPools = { proc: [], model: [] };
 let pedMeshes = pedPools.proc;
 // 3D 사람 모델: Quaternius Universal Animation Library의 마네킹 (CC0). assets/ped.glb = 모델 + 동작 4개만 남긴 가벼운 파일
-const PED_MODEL_SCENES = ['02', '06', '11', '16'];   // 3D 사람 모델을 쓰는 시나리오
+const PED_MODEL_SCENES = ['02', '06', '11'];   // 3D 사람 모델을 쓰는 시나리오
 let PED_GLTF = null;
 try {
   if (!LOOK_OLD && THREE.GLTFLoader && THREE.SkeletonUtils) new THREE.GLTFLoader().load('assets/ped.glb', g => { PED_GLTF = g; }, undefined, () => {});
@@ -2723,7 +2617,7 @@ function makePedModel() {
 // 모델 자세: 걷는 거리(위상)로 걷기·뛰기 동작의 시각을 정한다 (리플레이에서도 똑같이 나오도록 시간이 아니라 위상으로)
 function pedModelPose(pm, i, ph, mode, t) {
   const q = G.peds[i]; let act, time;
-  if (mode > 0.5 || (q && q.kick && !q.fly)) { act = pm.acts.idle; time = 0; }   // 날아가거나 쓰러진 상태 / 킥보드 탄 사람은 서 있는 자세: 팔다리를 몸에 붙인 선 자세 (몸 전체는 spin이 돌린다)
+  if (mode > 0.5) { act = pm.acts.idle; time = 0; }   // 날아가거나 쓰러진 상태: 팔다리를 몸에 붙인 선 자세 (몸 전체는 spin이 돌린다)
   // 걸음 위상이 바뀌면 '움직인 시각'을 기록. 화면이 계산보다 자주 그려져 같은 위상이 두 번 나와도 걷기를 유지하도록 0.25초 넘게 멈춰야 서 있음
   else if (Math.abs(ph - pm.lastPh) > 1e-6 || !(t >= pm.moveT) || t - pm.moveT < 0.25) {
     if (Math.abs(ph - pm.lastPh) > 1e-6 || !(t >= pm.moveT)) pm.moveT = t;
@@ -2743,16 +2637,6 @@ const DIZZY_TEX = texFrom(128, 128, g => {   // 소용돌이 + 작은 별 세 �
   g.fillStyle = '#fff2a8'; star(18, 30, 11); star(110, 40, 9); star(100, 104, 10);
 });
 // 자전거: 바퀴 두 개와 틀. 진행 방향(+x)으로 길게 놓인다
-// 전동 킥보드: 낮은 발판 + 앞쪽 세로 손잡이 대 + 가로 손잡이 + 작은 바퀴 두 개. 진행 방향(+x)으로 길게 놓인다 (자전거 자리를 대신 쓴다)
-function makeKick() {
-  const g = new THREE.Group(), body = lambert(0x2b2f36), dark = lambert(0x111214), acc = lambert(0x2fae62);
-  g.add(box(1.0, 0.05, 0.18, body, 0, 0.13, 0));                          // 발판
-  g.add(box(0.05, 1.0, 0.05, body, 0.46, 0.62, 0));                        // 손잡이 대
-  g.add(box(0.06, 0.05, 0.52, dark, 0.46, 1.12, 0));                       // 손잡이
-  g.add(box(0.2, 0.04, 0.19, acc, 0.38, 0.17, 0));                         // 앞쪽 초록 장식 (공유 킥보드 느낌)
-  [-0.45, 0.47].forEach(x => { const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.06, 14), dark); wh.rotation.x = Math.PI / 2; wh.position.set(x, 0.1, 0); g.add(wh); });
-  g.visible = false; scene.add(g); return g;
-}
 function makeBike() {
   const g = new THREE.Group(), frame = lambert(0x2f7ad1), dark = lambert(0x1a1c1f);
   [-0.52, 0.52].forEach(x => { const wh = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.035, 6, 18), dark); wh.position.set(x, 0.33, 0); g.add(wh); });
@@ -2765,7 +2649,7 @@ function pedMeshAt(i) { while (pedMeshes.length <= i) pedMeshes.push(pedMeshes =
 // 보행자들의 현재 상태를 프레임용 숫자 목록으로: 한 사람당 [s, x, y, 회전, 걸음 위상, 날아가는 중(1)/걷는 중(0)]
 function pedFrame() {
   if (!G.peds.length) return null;
-  return G.peds.flatMap(q => q.fly ? [q.fly.s, q.fly.x, q.fly.y, q.fly.r, 0, 1] : [q.s, q.x, floorAt(q.s, q.x) + (q.bike ? (q.kick ? 0.17 : 0.32) : 0), q.walkS ? (q.heading ? 10 + q.heading : 3 + (q.sway || 0)) : q.along ? 1 : (q.dir || 1) < 0 ? 2 : 0, q.phase, 0]);   // 걷는 중: 네 번째 값 1 = 인도를 따라 내 쪽으로
+  return G.peds.flatMap(q => q.fly ? [q.fly.s, q.fly.x, q.fly.y, q.fly.r, 0, 1] : [q.s, q.x, floorAt(q.s, q.x) + (q.bike ? 0.32 : 0), q.walkS ? (q.heading ? 10 + q.heading : 3 + (q.sway || 0)) : q.along ? 1 : (q.dir || 1) < 0 ? 2 : 0, q.phase, 0]);   // 걷는 중: 네 번째 값 1 = 인도를 따라 내 쪽으로
 }
 // 내 차(사고 후 미끄러지는 중이어도)와 겹친 보행자는 차 앞으로 튕겨 나가 떨어진 뒤 미끄러진다
 function bikeFrame() {
@@ -2776,7 +2660,7 @@ function hitPeds(me) {
   const v = Math.hypot(me.vs, me.vx); if (v < 0.5) return;
   let any = false;
   G.peds.forEach((q, k) => {
-    if (q.fly || !(Math.abs(q.s - me.s) < 2.4 && Math.abs(q.x - me.x) < 0.9 + 0.25 * q.scale + (q.bike ? (q.kick ? 0.35 : 0.55) : 0))) return;
+    if (q.fly || !(Math.abs(q.s - me.s) < 2.4 && Math.abs(q.x - me.x) < 0.9 + 0.25 * q.scale + (q.bike ? 0.55 : 0))) return;
     q.hitSpeed = v; any = true;
     if (q.bike) q.bk = { s: q.s, x: q.x, vs: v * 0.6, vx: (q.x - me.x) * 0.5 + 1 };   // 자전거는 사람과 따로 쓰러져 미끄러진다
     // 사고 재구성에서 흔히 쓰는 범위: 차 속도의 약 85~90%로 앞으로 떨어지고, 높이는 낮게 뜬다
@@ -2804,9 +2688,8 @@ function floorAt(s, x) {
   const ax = Math.abs(x), HW = R.half;
   if (R.type !== 'city4') return ax <= 4.7 ? 0 : Math.max(0, groundY(s, x) - h(s));   // 국도: 갓길까지는 도로 높이
   if (ax <= HW + 0.2) return 0;
-  if (R.intersection && Math.abs(s - R.intersection) < XHW() + 0.2) return 0;   // 교차로(가로 도로) 위
+  if (R.intersection && Math.abs(s - R.intersection) < HW + 0.2) return 0;   // 교차로(가로 도로) 위
   if (ax <= HW + 3) return 0.15;
-  if (R.intersection && Math.abs(s - R.intersection) <= XHW() + 3) return 0.15;   // 가로 도로 보도 (16: 자전거가 달리는 큰길 보도)
   return Math.max(0, groundY(s, x) - h(s));
 }
 function walkPeds(dt) {
@@ -2858,7 +2741,7 @@ const lodRef = { s: 0, x: 0 }, LOD_NEAR = 40, CAR_FAR = 300;
 function walkH(s, x) {
   if (R.type !== 'city4' || R.noWalk) return 0;
   const ax = Math.abs(x), HW = R.half; if (ax <= HW + 0.2 || ax > HW + 3) return 0;
-  if (R.intersection && Math.abs(s - R.intersection) < XHW() + 0.2) return 0;
+  if (R.intersection && Math.abs(s - R.intersection) < HW + 0.2) return 0;
   const M = R.merge; if (M && x > 0 && s > M.s0 - M.len * Math.cos(M.ang) - 4 && s < M.s1 + M.taper) return 0;
   const SR = R.sideRoad; if (SR && x > 0 && Math.abs(s - SR.s) < SR.w / 2) return 0;   // 15: 골목 입구 (인도 끊김)
   return 0.15;
@@ -3140,15 +3023,13 @@ function exitOff(s) {
 }
 // 14: 출구 삼각형 끝(nose) 뒤, 본선과 출구 사이 잔디밭인가 (연석 바깥쪽 포함)
 function goreGrass(s, x) { const E = R.exit; return !!E && s >= E.nose && x > 7.2 && x < 8.75 + exitOff(s) - 1.9; }
-// 교차로 가로 도로의 반폭 (16: 큰길 4차로가 가로 도로이고 내가 들어가는 골목이 세로 도로라 폭이 다르다)
-const XHW = () => R.crossHalf ?? R.half;
 // 도로 밖(잔디)인가: 국도는 갓길 밖, 도심은 보도 밖. 교차로 가로 도로·합류 진입로와 가속 차로는 도로로 본다
 function offRoad(s, x) {
   const ax = Math.abs(x);
   if (R.type === 'alley') return false;
   if (R.type !== 'city4') return ax > 4.7;
   if (ax <= R.half + 3) return false;
-  if (R.intersection && Math.abs(s - R.intersection) < XHW() + 3) return false;
+  if (R.intersection && Math.abs(s - R.intersection) < R.half + 3) return false;
   if (goreGrass(s, x)) return true;   // 14: 삼각형 끝 뒤 잔디밭은 풀밭 (도로의 2배로 감속)
   if (R.exit && x > 0 && s >= R.exit.s0 && x < 8.75 + exitOff(s) + 2) return false;   // 14: 출구 차로
   const M = R.merge;
@@ -3735,7 +3616,7 @@ function step(dt) {
     if (p.x < lo || p.x > hi) { p.x = clamp(p.x, lo, hi); p.latV = 0; }
   }
   // 도로 끝(도심은 연석, 국도는 갓길)에 바퀴가 걸치면(끝에서 0.3m 안) 덜덜거리며 끌리듯 느려진다
-  const inIx = R.intersection && Math.abs(p.s - R.intersection) < XHW() + 0.2;   // 교차로 안은 연석이 끊겨 있다
+  const inIx = R.intersection && Math.abs(p.s - R.intersection) < R.half + 0.2;   // 교차로 안은 연석이 끊겨 있다
   G.curb = !onPath && !inIx && (p.x > X_MAX - 0.3 || p.x < X_MIN + 0.3);
   if (G.curb) p.v = Math.max(0, p.v - 3 * dt);
   const prevS = onPath ? p.s : p.s; if (!onPath) p.s += p.v * dt;
@@ -3832,7 +3713,7 @@ function step(dt) {
     }
   }
   G.frames.push({ t, br: held || (keys.down && p.v > 0.1) ? 1 : 0, ps: p.s, px: p.x, py: p.yaw || 0, ts: tr.s, bs: G.bait ? G.bait.s : undefined, cs: G.cars.map(c => c.active ? c.s : NaN), cx: G.cars.map(c => c.x), cy: G.cars.map(c => c.yaw || 0), cb: G.cars.map(c => c.brk ? 1 : 0), tbk: tr.brk ? 1 : 0, pd: pedFrame(), bk: bikeFrame() });   // cb·tbk: 브레이크등 (차들·앞차)
-  if (p.v > 0.5 && G.peds.some(q => Math.abs(q.s - p.s) < 2.4 && Math.abs(q.x - p.x) < 0.9 + 0.25 * q.scale + (q.bike ? (q.kick ? 0.35 : 0.55) : 0))) return crash('ped', null);
+  if (p.v > 0.5 && G.peds.some(q => Math.abs(q.s - p.s) < 2.4 && Math.abs(q.x - p.x) < 0.9 + 0.25 * q.scale + (q.bike ? 0.55 : 0))) return crash('ped', null);
 
   if (Math.abs(tr.s - p.s) < SC.truck.hl + 2.0 && Math.abs(tr.x - p.x) < SC.truck.hw + 0.85) return crash('truck', null);
   if (G.bait && Math.abs(G.bait.s - p.s) < SC.bait.hl + 2.0 && Math.abs(G.bait.x - p.x) < SC.bait.hw + 0.85) return crash('bait', null);
@@ -3851,7 +3732,6 @@ const AX_X = new THREE.Vector3(1, 0, 0), AX_Y = new THREE.Vector3(0, 1, 0), _pq 
 // f: { t, ps, px, py?, ts, tx?, ty?, tp?, cs[], cx[]?, cy[]? }  (사고 전 프레임에는 회전·옆 위치 값이 없다)
 // 신호 일정: 내 쪽은 greenAt까지 빨간불, 가로 도로는 그 3초 전까지 녹색 → 노란불 → 1초 전부터 빨간불
 function updateLights(t) {
-  if (SC.fixedLights) { const F = SC.fixedLights; LIGHTS.forEach(L => { const k = L.role === 'ped' ? F.ped : F.car; if (L.cur !== k) { L.set(k); L.cur = k; } }); return; }   // 16: 신호가 바뀌지 않는다
   if (SC.xsig) {   // 11: 신호 있는 횡단보도. 차량: 녹색 → 노란불 → 빨간불(보행자 녹색) → 다시 녹색. 보행자 녹색은 끝날 무렵 깜빡인다
     const X = SC.xsig, car = t < X.yellowAt ? 'green' : t < X.redAt ? 'yellow' : t < X.greenAt ? 'red' : 'green';
     const ped = t >= X.pedOn && t < X.pedOff ? (t >= X.pedFlash && Math.floor(t * 2) % 2 ? 'off' : 'walk') : 'stop';
@@ -3938,7 +3818,7 @@ function drawWorld(f, showPlayer) {
     if (pm.isModel) pedModelPose(pm, i, qph, mode, f.t);
     if (pm.isModel && mode > 0.5) liftAboveFloor(pm, h(qs) + floorAt(qs, qx));   // 날아가거나 쓰러진 마네킹이 땅을 뚫지 않게
   });
-  { const kick = G.peds.some(q => q.kick); if (G.peds.some(q => q.bike) && (!bikeMesh || bikeMesh.userData.kick !== kick)) { if (bikeMesh) scene.remove(bikeMesh); bikeMesh = kick ? makeKick() : makeBike(); bikeMesh.userData.kick = kick; } }   // 16: 전동 킥보드
+  if (G.peds.some(q => q.bike) && !bikeMesh) bikeMesh = makeBike();
   if (bikeMesh) {   // 자전거: 타고 있을 때는 서 있고, 부딪힌 뒤에는 옆으로 쓰러져 있다
     const on = !!f.bk && G.peds.some(q => q.bike); bikeMesh.visible = on;
     if (on) { const [bs, bx, lie] = f.bk; wpos(bs, bx, h(bs) + 0.04 * lie, bikeMesh.position); bikeMesh.rotation.set(lie * Math.PI / 2, 0, 0); }
@@ -4163,7 +4043,6 @@ function pedFault(q) {   // 보행자 한 사람: { car: 차 과실 %, chart, ba
     if (carGreen) { const s0 = pedSig(entry); return s0 === 'green' ? { car: 90, chart: '보11', base: true } : s0 === 'flash' ? { car: 80, chart: '보11', base: true } : { car: 30, chart: '보8', base: true }; }
     return pedSig(t) === 'red' ? { car: 60, chart: '보6', base: true } : { car: 100, chart: '보10', base: false };
   }
-  if (R.teeCrosswalk && !q.bike) { const d = Math.abs(q.s - R.teeCrosswalk); if (d <= 3) return { car: 100, chart: '보13', base: false }; }   // 16: 골목 입구 신호 없는 횡단보도의 보행자 (자전거 도표는 아직 확인 못 함)
   if (R.crosswalk) {   // 신호 없는 횡단보도 (02)
     const d = Math.abs(q.s - R.crosswalk);
     return d <= 3 ? { car: 100, chart: '보13', base: false } : d <= 10 ? { car: 80, chart: '보20', base: true } : { car: 80, chart: '보23', base: true };
@@ -4652,7 +4531,7 @@ function drawPlan(f) {
     const kc = curvNear(ss), a = Math.min(1, Math.abs(kc) * 170); if (a < 0.1) continue;
     pctx.fillStyle = `rgba(40,110,60,${0.85 * a})`; kc > 0 ? pctx.fillRect(X(ss), Y(HW + 0.3), 2 * k + 0.5, H - Y(HW + 0.3)) : pctx.fillRect(X(ss), 0, 2 * k + 0.5, Y(-HW - 0.3));
   }
-  if (R.intersection) { pctx.fillStyle = '#2a313c'; pctx.fillRect(X(R.intersection - XHW()), 0, 2 * XHW() * k, H); }   // 가로 도로
+  if (R.intersection) { pctx.fillStyle = '#2a313c'; pctx.fillRect(X(R.intersection - HW), 0, 2 * HW * k, H); }   // 가로 도로
   if (R.merge) { const M = R.merge; pctx.fillStyle = '#2a313c'; pctx.fillRect(X(M.s0), Y(HW), (M.s1 - M.s0) * k, 3.8 * vx); pctx.beginPath(); pctx.moveTo(X(M.s1), Y(HW)); pctx.lineTo(X(M.s1), Y(HW + 3.8)); pctx.lineTo(X(M.s1 + M.taper), Y(HW)); pctx.fill(); }   // 가속 차로
   sideAlleys().forEach(a => { pctx.fillStyle = '#2a313c'; a.side < 0 ? pctx.fillRect(X(a.s - a.w / 2), 0, a.w * k, Y(-HW)) : pctx.fillRect(X(a.s - a.w / 2), Y(HW), a.w * k, H - Y(HW)); });   // 갈림 골목들
   if (R.sideRoad) { const SR = R.sideRoad; pctx.fillStyle = '#2a313c'; pctx.fillRect(X(SR.s - SR.w / 2), Y(HW), SR.w * k, H - Y(HW)); }   // 15: 오른쪽 골목
