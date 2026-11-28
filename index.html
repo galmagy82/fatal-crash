@@ -969,14 +969,14 @@ const SCENARIOS = [
       zoneStart: -1e4, zoneEnd: 1e4, goal: 1e4, crosswalk: 120, sideRoad: { s: 140, w: 7, len: 120, walk: 2.5, twoWay: true, round: 4 }, mouthCrosswalk: true },   // 골목: 왕복 2차로(폭 7m) + 양쪽 인도 2.5m
     xsig: { yellowAt: 1e9, redAt: 1e9, pedOn: 1e9, pedFlash: 1e9, pedOff: 1e9, greenAt: 1e9 },   // 신호가 바뀌지 않는다: 차량 녹색, 보행자 빨간불
     // 3차로(x 8.75)를 시속 50km로 출발해 코너에 다가갈수록 저절로 줄인다(2.5m/s²). 골목 바로 앞에서 타원으로 우회전(세로 7m, 가로 5m) → 골목 오른쪽 차로(s 138.25)를 따라 +x로. 브레이크만 된다
-    player: { s: 60, v: 13.9, x: 8.75, path: { kind: 'alley', s0: 60, x0: 8.75, approach: 71.25, rx: 5, rs: 7, vcap: 13.9, dec: 2.5, v20: 5.56, vturn: 4.0, goalU: 71.25 + 10 + 70 } },
+    player: { s: 90, v: 13.9, x: 8.75, path: { kind: 'alley', s0: 90, x0: 8.75, approach: 41.25, rx: 5, rs: 7, vcap: 13.9, dec: 2.5, v20: 5.56, vturn: 4.0, goalU: 41.25 + 10 + 70 } },   // 출발점을 횡단보도 쪽으로 30m 당김 (s 60 → 90)
     truck: { type: 'truck', label: '화물차', parked: true, s: 5000, x: 40, up: 0, flat: 0, down: 0, mass: 6, hl: 5, hw: 1.25, height: 3.5 },
     oncoming: [
       { label: '2차로 차', fwd: true, s: 95, x: 5.25, v: 12, color: 0x3c4a3e },
       { label: '1차로 차', fwd: true, s: 40, x: 1.75, v: 13, color: 0x7a2a2a },
       { label: '맞은편 차', s: 260, x: -5.25, v: 12 }, { label: '맞은편 차', s: 360, x: -1.75, v: 13 },
       // 골목 맞은편 차로(s 141.75)를 큰길 쪽(-x)으로 내려오는 차: 골목 입구 횡단보도 앞(가운데 x 17.5)에서 선다
-      { label: '골목 차', alleyOut: { stopX: 17.5 }, s: 141.75, x: 90, v: 8, color: 0x8e8e88 },
+      { label: '골목 차', alleyOut: { stopX: 17.5 }, s: 141.75, x: 78.75, v: 8, color: 0x8e8e88 },   // 골인 문(x 83.75) 5m 앞에서 출발
     ],
     peds: [
       // 골목 입구 횡단보도: 오른쪽 보도를 따라 내 쪽(-s)으로 걸어와 골목 입구를 건너는 사람 (초속 1.44m)
@@ -991,7 +991,7 @@ const SCENARIOS = [
       '보행자가 다 건넜다고 끝이 아닙니다. 출발 전에 오른쪽 뒤에서 오는 전동 킥보드·자전거를 한 번 더 확인하세요.',
       '실제 차에서는 오른쪽 사이드미러와 어깨 너머로 확인합니다. 이 게임에는 거울이 없어 볼 수 없었습니다.',
     ],
-    thumb: { s: 60, x: 8.75, lead: 5000 },
+    thumb: { s: 90, x: 8.75, lead: 5000 },
     hint: '우회전은 자동입니다. 브레이크로 속도를 조절하세요.',
     replay: 'plan', sightLines: false,
   },
