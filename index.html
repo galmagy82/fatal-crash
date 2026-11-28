@@ -2835,7 +2835,8 @@ function walkPeds(dt) {
   if (q.fly) return;
   if (q.startAt && G.t < q.startAt) return;
   if (q.alongS) {   // 16: 길(보도)을 따라 s 방향으로 움직인다 (dir +1: +s, -1: -s), sEnd에서 멈춘다
-    const d = q.dir || 1; if (d > 0 ? q.s < q.sEnd : q.s > q.sEnd) { q.s += d * q.v * dt; q.phase += q.v * dt; }
+    if (q.kick && G.ch) q.cv = Math.max(0, (q.cv ?? q.v) - 4 * dt);   // 16: 사고가 나면 킥보드는 속도를 줄여 선다 (4m/s²)
+    const d = q.dir || 1, vq = q.kick ? (q.cv ?? q.v) : q.v; if (d > 0 ? q.s < q.sEnd : q.s > q.sEnd) { q.s += d * vq * dt; q.phase += vq * dt; }
     return;
   }
   if (q.walkS) {   // 길을 따라 GOAL 쪽(+s)으로 걷는 사람
