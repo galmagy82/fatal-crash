@@ -2916,6 +2916,20 @@ function startChain() {
   pushChainFrame();
 }
 function bodyExt(b) { const c = Math.abs(Math.cos(b.yaw)), sn = Math.abs(Math.sin(b.yaw)); return { l: b.hl * c + b.hw * sn, w: b.hl * sn + b.hw * c }; }
+// 날아가거나 구르는 사람·쓰러진 킥보드(o: s, x, vs, vx, 반지름 r)가 차체(가운데 cs·cx, 방향 yaw, 반길이 hl·반폭 hw, 속도 bvs·bvx) 안으로 들어가면
+// 가장 얕은 쪽으로 밀어내고, 차에 대해 안쪽으로 움직이던 속도는 튕겨 나오게 바꾼다. 밀어낸 거리 [ds, dx]를 돌려준다 (안 닿으면 null)
+function boxPush(o, r, cs, cx, yaw, hl, hw, bvs, bvx) {
+  const c = Math.cos(yaw), sn = Math.sin(yaw), ds = o.s - cs, dx = o.x - cx;
+  const a = ds * c - dx * sn, l = ds * sn + dx * c, pa = hl + r - Math.abs(a), pl = hw + r - Math.abs(l);
+  if (pa <= 0 || pl <= 0) return null;
+  let ns, nx, pen;
+  if (pa < pl) { const sg = Math.sign(a) || 1; ns = c * sg; nx = -sn * sg; pen = pa; } else { const sg = Math.sign(l) || 1; ns = sn * sg; nx = c * sg; pen = pl; }
+  o.s += ns * pen; o.x += nx * pen;
+  const vn = (o.vs - (bvs || 0)) * ns + (o.vx - (bvx || 0)) * nx;
+  if (vn < 0) { o.vs -= ns * vn * 1.2; o.vx -= nx * vn * 1.2; o.vs *= 0.85; o.vx *= 0.85; }
+  return [ns * pen, nx * pen];
+}
+const KICK_HL = 0.55, KICK_HW = 0.25;   // 쓰러진 킥보드 크기 (길이 방향 반길이, 반폭)
 function chainStep(dt) {
   const C = G.ch; C.tc += dt; G.t += dt;
   for (const b of C.bodies) {
@@ -2974,6 +2988,13 @@ function chainStep(dt) {
       f.y = lowest() + floorAt(f.s, f.x);   // 구르는 동안에도 바닥 위에 붙어 있다
     }
     f.s += f.vs * dt; f.x += f.vx * dt;
+    // 다른 차: 차체를 뚫지 않고 튕겨 나온다 (나를 친 내 차는 빼고. 막 치인 사람이 내 차 앞에 붙어 있어 계속 다시 걸리므로). 차 높이(1.4m)보다 높이 날 때는 넘어간다
+    if (f.y - lowest() < 1.4) for (const b of C.bodies) if (b.id !== 'me') boxPush(f, 0.25 * q.scale, b.s, b.x, b.yaw, b.hl, b.hw, b.vs, b.vx);
+    // 쓰러진 킥보드: 사람이 낮게(바닥에서 0.35m 안) 있을 때 닿으면 서로 밀어낸다. 킥보드가 가벼워 밀린 거리의 80%는 킥보드가 움직인다
+    if (f.y - lowest() < 0.35) G.peds.forEach(k => { const kb = k.bk; if (!kb) return;
+      const vs0 = f.vs, vx0 = f.vx, d = boxPush(f, 0.25 * q.scale, kb.s, kb.x, 0, KICK_HL, KICK_HW, kb.vs, kb.vx); if (!d) return;
+      f.s -= d[0] * 0.8; f.x -= d[1] * 0.8; kb.s -= d[0] * 0.8; kb.x -= d[1] * 0.8;
+      const dvs = f.vs - vs0, dvx = f.vx - vx0; f.vs = vs0 + dvs * 0.2; f.vx = vx0 + dvx * 0.2; kb.vs -= dvs * 0.8; kb.vx -= dvx * 0.8; });
     for (const P of ROAD_POSTS) {   // 길가 기둥: 닿으면 튕겨 나오며 속도를 잃는다 (사망 확률에는 넣지 않는다)
       const ds = f.s - P.s, dx = f.x - P.x, d = Math.hypot(ds, dx), rr = P.r + 0.25 * q.scale; if (d >= rr || d < 1e-6) continue;
       const ns = ds / d, nx = dx / d; f.s = P.s + ns * rr; f.x = P.x + nx * rr;
@@ -2985,7 +3006,7 @@ function chainStep(dt) {
       if (f.x > HW && !openR) { f.x = HW; f.vx = -Math.abs(f.vx) * 0.2; f.vs *= 0.7; }
     }
   });
-  G.peds.forEach(q => { const b = q.bk; if (!b) return; const sp = Math.hypot(b.vs, b.vx), d = 7 * dt; if (sp <= d) { b.vs = 0; b.vx = 0; } else { b.vs -= b.vs / sp * d; b.vx -= b.vx / sp * d; } b.s += b.vs * dt; b.x += b.vx * dt; });
+  G.peds.forEach(q => { const b = q.bk; if (!b) return; const sp = Math.hypot(b.vs, b.vx), d = 7 * dt; if (sp <= d) { b.vs = 0; b.vx = 0; } else { b.vs -= b.vs / sp * d; b.vx -= b.vx / sp * d; } b.s += b.vs * dt; b.x += b.vx * dt; for (const cb of C.bodies) if (cb.id !== 'me') boxPush(b, KICK_HL, cb.s, cb.x, cb.yaw, cb.hl, cb.hw, cb.vs, cb.vx); });   // 쓰러진 킥보드도 다른 차를 뚫지 않는다
   walkPeds(dt);   // 부딪히지 않은 보행자는 계속 걷는다
   hitPeds(G.ch.byId.me);   // 미끄러지는 내 차에 뒤늦게 부딪히는 보행자
   pushChainFrame();
