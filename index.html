@@ -969,7 +969,7 @@ const SCENARIOS = [
       zoneStart: -1e4, zoneEnd: 1e4, goal: 1e4, crosswalk: 120, sideRoad: { s: 140, w: 7, len: 120, walk: 2.5, twoWay: true, round: 4 }, mouthCrosswalk: true },   // 골목: 왕복 2차로(폭 7m) + 양쪽 인도 2.5m
     xsig: { yellowAt: 1e9, redAt: 1e9, pedOn: 1e9, pedFlash: 1e9, pedOff: 1e9, greenAt: 1e9 },   // 신호가 바뀌지 않는다: 차량 녹색, 보행자 빨간불
     // 3차로(x 8.75)를 시속 50km로 출발해 코너에 다가갈수록 저절로 줄인다(2.5m/s²). 골목 바로 앞에서 타원으로 우회전(세로 7m, 가로 5m) → 골목 오른쪽 차로(s 138.25)를 따라 +x로. 브레이크만 된다
-    player: { s: 60, v: 13.9, x: 8.75, path: { kind: 'alley', s0: 60, x0: 8.75, approach: 71.25, rx: 5, rs: 7, vcap: 13.9, dec: 2.5, v20: 5.56, vturn: 4.0, vexit: 8.33, goalU: 71.25 + 10 + 70 } },
+    player: { s: 60, v: 13.9, x: 8.75, path: { kind: 'alley', s0: 60, x0: 8.75, approach: 71.25, rx: 5, rs: 7, vcap: 13.9, dec: 2.5, v20: 5.56, vturn: 4.0, goalU: 71.25 + 10 + 70 } },
     truck: { type: 'truck', label: '화물차', parked: true, s: 5000, x: 40, up: 0, flat: 0, down: 0, mass: 6, hl: 5, hw: 1.25, height: 3.5 },
     oncoming: [
       { label: '2차로 차', fwd: true, s: 95, x: 5.25, v: 12, color: 0x3c4a3e },
@@ -978,9 +978,9 @@ const SCENARIOS = [
     ],
     peds: [
       // 골목 입구 횡단보도: 오른쪽 보도를 따라 내 쪽(-s)으로 걸어와 골목 입구를 건너는 사람 (초속 1.44m)
-      { label: '보행자', title: '우회전 후 횡단보도 사고', alongS: true, s: 155.5, sEnd: 118, x0: 11.6, xEnd: 11.6, dir: -1, v: 1.44, scale: 1, stay: true, cap: '골목 입구 횡단보도를 건너는 사람이 있습니다.' },
-      // 전동 킥보드: 내 뒤쪽 보도를 따라 초속 6m(시속 약 22km)로 달려와 골목 입구를 가로지른다 (s 49: 3초 앞당김)
-      { label: '전동 킥보드', title: '우회전 후 킥보드 사고', alongS: true, bike: true, kick: true, s: 49, sEnd: 400, x0: 12.8, xEnd: 12.8, dir: 1, v: 6.0, scale: 1, stay: true, coat: 0x2f6e9e, pants: 0x2b2f36, cap: '뒤쪽 보도에서 전동 킥보드가 골목 입구로 들어왔습니다.' },
+      { label: '보행자', title: '우회전 후 횡단보도 사고', alongS: true, s: 150.5, sEnd: 118, x0: 11.6, xEnd: 11.6, dir: -1, v: 1.44, scale: 1, stay: true, cap: '골목 입구 횡단보도를 건너는 사람이 있습니다.' },
+      // 전동 킥보드: 내 뒤쪽 보도를 따라 초속 6m(시속 약 22km)로 달려와 골목 입구를 가로지른다 (s 46)
+      { label: '전동 킥보드', title: '우회전 후 킥보드 사고', alongS: true, bike: true, kick: true, s: 46, sEnd: 400, x0: 12.8, xEnd: 12.8, dir: 1, v: 6.0, scale: 1, stay: true, coat: 0x2f6e9e, pants: 0x2b2f36, cap: '뒤쪽 보도에서 전동 킥보드가 골목 입구로 들어왔습니다.' },
     ],
     capPedSeen: true,
     noSeenLine: true,
@@ -3699,11 +3699,19 @@ function step(dt) {
     const cap = exiting ? (P.vexit || V_MAX) : toArc > 0 ? Math.min(P.vcap, Math.sqrt(v20 * v20 + A * Math.max(0, toArc - 3)), Math.sqrt(P.vturn * P.vturn + A * toArc)) : P.vturn;
     if (keys.down) p.v -= 8 * dt;
     else p.v += exiting ? 4.2 * (1 - p.v / (V_MAX * 1.08)) * (P.boost || 1) * dt : 3 * dt;
-    p.v = clamp(p.v, 0, cap); p.latV = 0;   // 상한보다 빠르면 상한까지 (저절로 감속)
+    p.v = clamp(p.v, 0, cap);   // 상한보다 빠르면 상한까지 (저절로 감속)
+    const inAlley = P.kind === 'alley' && p.u >= arcEnd;   // 16: 골목에 들어서면 왼쪽·오른쪽으로 차로를 옮길 수 있다 (왼쪽 = +s)
+    if (inAlley) {
+      const st = (keys.right ? 1 : 0) - (keys.left ? 1 : 0), lm = 2.8 * clamp(p.v / 12, 0, 1);
+      p.latV += (st * lm - p.latV) * Math.min(1, dt * (st ? 5 : 14));
+      const SR = R.sideRoad, lo = SR.s - SR.w / 2 + 0.9, hi = SR.s + SR.w / 2 - 0.9, base = P.s0 + P.approach + P.rs;
+      P.lat = (P.lat || 0) - p.latV * dt;
+      if (base + P.lat < lo || base + P.lat > hi) { P.lat = clamp(base + P.lat, lo, hi) - base; p.latV = 0; }
+    } else p.latV = 0;
     const prevU = p.u; p.u += p.v * dt;
     if (prevU < P.approach && p.u >= P.approach) ev('turnMe');
     if (P.kind !== 'alley' && p.u >= arcEnd) { P.done = true; p.u = arcEnd; }   // 16: 골목에서는 끝까지 경로를 따라간다
-    const q = pathPose(P, p.u); p.x = q.x; p.yaw = q.yaw; p.s = q.s;
+    const q = pathPose(P, p.u); p.x = q.x; p.yaw = q.yaw; p.s = q.s + (inAlley ? P.lat || 0 : 0);
   }
   // 가속 페달은 항상 밟혀 있다 (빠를수록 덜 붙는다). 브레이크를 밟는 동안만 느려진다.
   if (onPath) {} else if (keys.down) p.v -= 8 * dt;
