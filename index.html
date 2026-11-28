@@ -980,9 +980,12 @@ const SCENARIOS = [
     ],
     peds: [
       // 골목 입구 횡단보도: 오른쪽 보도를 따라 내 쪽(-s)으로 걸어와 골목 입구를 건너는 사람 (초속 1.44m)
-      { label: '보행자', title: '우회전 후 횡단보도 사고', alongS: true, s: 145.5, sEnd: 118, x0: 11.6, xEnd: 11.6, dir: -1, v: 1.44, scale: 1, stay: true, cap: '골목 입구 횡단보도를 건너는 사람이 있습니다.' },
+      { label: '보행자', title: '우회전 후 횡단보도 사고', alongS: true, s: 145.5, sEnd: 118, x0: 11.6, xEnd: 11.6, dir: -1, v: 1.44, scale: 1, stay: true, cap: '골목 입구 횡단보도를 건너는 사람이 있습니다.',
+        body: '우회전 직후, 골목 입구 횡단보도를 건너던 사람이었습니다.' },
       // 전동 킥보드: 내 뒤쪽 보도를 따라 초속 6m(시속 약 22km)로 달려와 골목 입구를 가로지른다 (s 46)
-      { label: '전동 킥보드', title: '우회전 후 킥보드 사고', alongS: true, bike: true, kick: true, s: 77.8, sEnd: 400, x0: 12.8, xEnd: 12.8, dir: 1, v: 6.0, scale: 1, stay: true, coat: 0x2f6e9e, pants: 0x2b2f36, cap: '뒤쪽 보도에서 전동 킥보드가 골목 입구로 들어왔습니다.' },
+      { label: '전동 킥보드', title: '우회전 후 킥보드 사고', alongS: true, bike: true, kick: true, s: 77.8, sEnd: 400, x0: 12.8, xEnd: 12.8, dir: 1, v: 6.0, scale: 1, stay: true, coat: 0x2f6e9e, pants: 0x2b2f36, cap: '뒤쪽 보도에서 전동 킥보드가 골목 입구로 들어왔습니다.',
+        body: '보도를 따라 뒤에서 달려온 전동 킥보드는 거울 없이는 운전석에서 미리 볼 수 없었습니다.',
+        bodyStruck: '횡단보도 위에 멈춰 선 내 차 옆으로 전동 킥보드가 달려와 부딪혔습니다. 횡단보도를 막고 서 있으면 보도를 지나는 사람·킥보드와 부딪힐 수 있습니다.' },
     ],
     capPedSeen: true,
     noSeenLine: true,
@@ -2746,7 +2749,21 @@ function pedTouch(q, s, x, yaw) {
   const ds = q.s - s, dx = q.x - x, c = Math.cos(yaw), sn = Math.sin(yaw);
   return Math.abs(ds * c - dx * sn) < 2.4 && Math.abs(ds * sn + dx * c) < 0.9 + 0.25 * q.scale + (q.bike ? (q.kick ? 0.35 : 0.55) : 0);
 }
+// 16: 서 있는 내 차에 전동 킥보드가 달려와 부딪힌다. 탄 사람은 달리던 방향으로 내 차 옆면에 부딪혀 튕기고, 킥보드는 쓰러져 미끄러진다
+function kickStruck(me) {
+  G.flags.struckDone = true;
+  G.peds.forEach(q => {
+    if (!q.kick || q.fly || !pedTouch(q, me.s, me.x, me.yaw || 0)) return;
+    const d = q.dir || 1; q.hitSpeed = q.v; q.struck = true;
+    q.fly = { s: q.s, x: q.x, y: 0.9 * q.scale, vs: d * q.v * 0.35, vx: 0, vy: 2.2, r: 0, rr: 3, ground: false, roll: 0, yaw: 0, bounces: 0 };
+    q.bk = { s: q.s - d * 0.3, x: q.x, vs: -d * 0.8, vx: 0.5 };
+    const rc = { t: G.t, a: 'me', b: 'ped', s: q.s, x: q.x, vs: q.v, sideA: 'none', sideB: 'none', dvA: 0.3, dvB: q.v, ped: true };
+    rc.debris = makeDebris(rc, me, { id: 'ped' }); G.ch.impacts.push(rc);
+  });
+  thud(0.4);
+}
 function hitPeds(me) {
+  if (G.flags.struck && !G.flags.struckDone) return kickStruck(me);
   const v = Math.hypot(me.vs, me.vx); if (v < 0.5) return;
   let any = false;
   G.peds.forEach((q, k) => {
@@ -2989,7 +3006,7 @@ function chainStep(dt) {
     }
     f.s += f.vs * dt; f.x += f.vx * dt;
     // 다른 차: 차체를 뚫지 않고 튕겨 나온다 (나를 친 내 차는 빼고. 막 치인 사람이 내 차 앞에 붙어 있어 계속 다시 걸리므로). 차 높이(1.4m)보다 높이 날 때는 넘어간다
-    if (f.y - lowest() < 1.4) for (const b of C.bodies) if (b.id !== 'me') boxPush(f, 0.25 * q.scale, b.s, b.x, b.yaw, b.hl, b.hw, b.vs, b.vx);
+    if (f.y - lowest() < 1.4) for (const b of C.bodies) if (b.id !== 'me' || q.struck) boxPush(f, 0.25 * q.scale, b.s, b.x, b.yaw, b.hl, b.hw, b.vs, b.vx);
     // 쓰러진 킥보드: 사람이 낮게(바닥에서 0.35m 안) 있을 때 닿으면 서로 밀어낸다. 킥보드가 가벼워 밀린 거리의 80%는 킥보드가 움직인다
     if (f.y - lowest() < 0.35) G.peds.forEach(k => { const kb = k.bk; if (!kb) return;
       const vs0 = f.vs, vx0 = f.vx, d = boxPush(f, 0.25 * q.scale, kb.s, kb.x, 0, KICK_HL, KICK_HW, kb.vs, kb.vx); if (!d) return;
@@ -3006,7 +3023,7 @@ function chainStep(dt) {
       if (f.x > HW && !openR) { f.x = HW; f.vx = -Math.abs(f.vx) * 0.2; f.vs *= 0.7; }
     }
   });
-  G.peds.forEach(q => { const b = q.bk; if (!b) return; const sp = Math.hypot(b.vs, b.vx), d = 7 * dt; if (sp <= d) { b.vs = 0; b.vx = 0; } else { b.vs -= b.vs / sp * d; b.vx -= b.vx / sp * d; } b.s += b.vs * dt; b.x += b.vx * dt; for (const cb of C.bodies) if (cb.id !== 'me') boxPush(b, KICK_HL, cb.s, cb.x, cb.yaw, cb.hl, cb.hw, cb.vs, cb.vx); });   // 쓰러진 킥보드도 다른 차를 뚫지 않는다
+  G.peds.forEach(q => { const b = q.bk; if (!b) return; const sp = Math.hypot(b.vs, b.vx), d = 7 * dt; if (sp <= d) { b.vs = 0; b.vx = 0; } else { b.vs -= b.vs / sp * d; b.vx -= b.vx / sp * d; } b.s += b.vs * dt; b.x += b.vx * dt; for (const cb of C.bodies) if (cb.id !== 'me' || q.struck) boxPush(b, KICK_HL, cb.s, cb.x, cb.yaw, cb.hl, cb.hw, cb.vs, cb.vx); });   // 쓰러진 킥보드도 다른 차를 뚫지 않는다
   walkPeds(dt);   // 부딪히지 않은 보행자는 계속 걷는다
   hitPeds(G.ch.byId.me);   // 미끄러지는 내 차에 뒤늦게 부딪히는 보행자
   pushChainFrame();
@@ -3860,6 +3877,7 @@ function step(dt) {
   }
   G.frames.push({ t, br: held || (keys.down && p.v > 0.1) ? 1 : 0, ps: p.s, px: p.x, py: p.yaw || 0, ts: tr.s, bs: G.bait ? G.bait.s : undefined, cs: G.cars.map(c => c.active ? c.s : NaN), cx: G.cars.map(c => c.x), cy: G.cars.map(c => c.yaw || 0), cb: G.cars.map(c => c.brk ? 1 : 0), tbk: tr.brk ? 1 : 0, pd: pedFrame(), bk: bikeFrame() });   // cb·tbk: 브레이크등 (차들·앞차)
   if (p.v > 0.5 && G.peds.some(q => pedTouch(q, p.s, p.x, p.yaw || 0))) return crash('ped', null);
+  if (p.v <= 0.5 && G.peds.some(q => q.kick && !q.fly && pedTouch(q, p.s, p.x, p.yaw || 0))) { G.flags.struck = true; return crash('ped', null); }   // 16: 서 있는 내 차에 킥보드가 부딪힌다
 
   if (Math.abs(tr.s - p.s) < SC.truck.hl + 2.0 && Math.abs(tr.x - p.x) < SC.truck.hw + 0.85) return crash('truck', null);
   if (G.bait && Math.abs(G.bait.s - p.s) < SC.bait.hl + 2.0 && Math.abs(G.bait.x - p.x) < SC.bait.hw + 0.85) return crash('bait', null);
@@ -4765,7 +4783,9 @@ function showResult() {
       const tq = G.peds.find(q => q.hitSpeed);
       title = (tq && tq.title) || SC.pedTitle || '횡단보도 보행자 사고'; sub = '';
       const hq = G.peds.find(q => q.hitSpeed && q.seenT);
-      if (SC.pedBody) body = (hq && !SC.noSeenLine ?`${hq.label}는 충돌 ${(e.t - hq.seenT).toFixed(1)}초 전에야 보였습니다. ` : '') + SC.pedBody;
+      const tb = tq && (G.flags.struck ? tq.bodyStruck : tq.body);   // 16: 사람마다 설명 (서 있다가 받힌 경우는 따로)
+      if (tb) body = tb;
+      else if (SC.pedBody) body = (hq && !SC.noSeenLine ?`${hq.label}는 충돌 ${(e.t - hq.seenT).toFixed(1)}초 전에야 보였습니다. ` : '') + SC.pedBody;
       else body = (G.flags.pedBackT ? `보행자는 충돌 ${(e.t - G.flags.pedBackT).toFixed(1)}초 전에야 다시 보였습니다. ` : '')
         + `정차한 ${SC.truck.label} 앞은 운전석에서 보이지 않았습니다. 옆 차로 차가 횡단보도 앞에 서 있다면, 그 앞에 사람이 있을 수 있습니다.`;
     } else if (e.type === 'parked') {
