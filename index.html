@@ -4198,6 +4198,7 @@ function latStart(get) {   // 충돌 직전 FAULT_WIN초의 옆 움직임: 마�
   }
   return start;
 }
+const PM_NOTE = ' 전동킥보드 과실은 <a href="https://news.tf.co.kr/read/economy/1870181.htm" target="_blank" rel="noopener">손해보험협회 PM 사고 과실비율 기준(2021, 인정기준 반영 전)</a>을 따릅니다.';
 const FAULT_NOTE = ' 과실은 <a href="https://accident.knia.or.kr/" target="_blank" rel="noopener">손해보험협회 「자동차사고 과실비율 인정기준」</a>의 해당 도표 값입니다. \'기본 과실\'은 기준표의 기본값으로, 실제로는 상황에 따라 가감됩니다. 참고용입니다.';
 function carFault() {   // { me: {pct, chart, base}, [상대 id]: {...} } 또는 null
   const C = G.ch, r0 = C && C.impacts[0]; if (!r0 || r0.b === 'wall' || (r0.a !== 'me' && r0.b !== 'me')) return null;
@@ -4236,7 +4237,7 @@ function carFault() {   // { me: {pct, chart, base}, [상대 id]: {...} } 또는
 }
 function pedFault(q) {   // 보행자 한 사람: { car: 차 과실 %, chart, base } 또는 null
   const t = q.hitT ?? G.end.t;
-  if (q.alongS) return q.bike ? null : { car: 100, chart: '보13', base: false };   // 16: 골목 입구 횡단보도 보행자 (킥보드 도표는 아직 확인 못 함)
+  if (q.alongS) return q.kick ? { car: 60, chart: 'PM', base: true } : q.bike ? null : { car: 100, chart: '보13', base: false };   // 16 전동킥보드: 인도를 달리던 PM vs 인도를 가로질러 우회전하던 차 = 차 60 : PM 40 (손해보험협회 PM 기준, 2021 사전 예고). 서 있던 내 차에 부딪힌 경우도 같은 값 (사용자 결정)   // 16: 골목 입구 횡단보도 보행자 (킥보드 도표는 아직 확인 못 함)
   if (SC.xsig) {   // 신호 있는 횡단보도 (11)
     const X = SC.xsig, entry = Math.abs(q.x0) > R.half ? (q.startAt || 0) + (Math.abs(q.x0) - R.half) / (q.cv ?? q.v) : (q.startAt || 0);
     const pedSig = tt => tt < X.pedOn ? 'red' : tt < X.pedFlash ? 'green' : tt < X.pedOff ? 'flash' : 'red';
@@ -4320,7 +4321,7 @@ function crashUpdate(dt) {
     $('injNote').innerHTML = G.end.type === 'ped'
       ? '사망 확률은 차에 치인 보행자의 평균 위험으로, <a href="https://doi.org/10.1016/j.aap.2012.07.022" target="_blank" rel="noopener">Tefft(2013), Accident Analysis &amp; Prevention</a>의 충돌 속도별 추정을 따릅니다. 나이가 많을수록 같은 속도에서도 위험이 더 큽니다.'
         + ' 운전자 사망 확률은 충돌 순간 몸이 겪은 속도 변화(Δv)에 따른 추정치입니다.'
-        + (G.end.injury.some(x => x.faultOn) ? FAULT_NOTE : '')
+        + (G.end.injury.some(x => x.faultOn) ? FAULT_NOTE : '') + (G.peds.some(q => q.kick && q.hitSpeed) ? PM_NOTE : '')
       : '충격은 충돌 순간 몸이 겪은 속도 변화(Δv)입니다. 사망 확률은 안전벨트를 맨 운전자 기준 추정치로, '
       + '<a href="https://doi.org/10.1080/15389588.2026.2717647" target="_blank" rel="noopener">Ayuningtyas 외(2026), Traffic Injury Prevention</a>'
       + '의 승용차 정면충돌 분석(전체 자료 모델)을 따르고, 충격이 큰 구간은 자료가 적어 '
