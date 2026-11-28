@@ -979,8 +979,8 @@ const SCENARIOS = [
     peds: [
       // 골목 입구 횡단보도: 오른쪽 보도를 따라 내 쪽(-s)으로 걸어와 골목 입구를 건너는 사람 (초속 1.44m)
       { label: '보행자', title: '우회전 후 횡단보도 사고', alongS: true, s: 155.5, sEnd: 118, x0: 11.6, xEnd: 11.6, dir: -1, v: 1.44, scale: 1, stay: true, cap: '골목 입구 횡단보도를 건너는 사람이 있습니다.' },
-      // 전동 킥보드: 내 뒤쪽 보도를 따라 초속 6m(시속 약 22km)로 달려와 골목 입구를 가로지른다 (s 40에서 1.5초 늦춤 → s 31)
-      { label: '전동 킥보드', title: '우회전 후 킥보드 사고', alongS: true, bike: true, kick: true, s: 31, sEnd: 400, x0: 12.8, xEnd: 12.8, dir: 1, v: 6.0, scale: 1, stay: true, coat: 0x2f6e9e, pants: 0x2b2f36, cap: '뒤쪽 보도에서 전동 킥보드가 골목 입구로 들어왔습니다.' },
+      // 전동 킥보드: 내 뒤쪽 보도를 따라 초속 6m(시속 약 22km)로 달려와 골목 입구를 가로지른다 (s 49: 3초 앞당김)
+      { label: '전동 킥보드', title: '우회전 후 킥보드 사고', alongS: true, bike: true, kick: true, s: 49, sEnd: 400, x0: 12.8, xEnd: 12.8, dir: 1, v: 6.0, scale: 1, stay: true, coat: 0x2f6e9e, pants: 0x2b2f36, cap: '뒤쪽 보도에서 전동 킥보드가 골목 입구로 들어왔습니다.' },
     ],
     capPedSeen: true,
     noSeenLine: true,
@@ -1663,7 +1663,14 @@ function buildRoad() {
     if (SR && SR.walk) [SR.s - SR.w / 2 - SR.walk, SR.s + SR.w / 2].forEach(a => ribbon(walk, a, a + SR.walk, xW, HW + SR.len, 0.15, SR.walk));   // 16: 골목 양쪽 인도
     if (SR && SR.round) { ribbon(asphalt, SR.s - SR.w / 2 - SR.round, SR.s - SR.w / 2, HW + 0.2, xW, 0, SR.round); ribbon(asphalt, SR.s + SR.w / 2, SR.s + SR.w / 2 + SR.round, HW + 0.2, xW, 0, SR.round); }   // 16: 둥근 모서리 바깥은 차도
     if (SR && SR.twoWay) [-0.25, 0.1].forEach(d => ribbon(yellow, SR.s + d, SR.s + d + 0.15, HW + 3.5, HW + SR.len, 0.02, 0.15));   // 16: 골목 중앙선 (노란 겹선)
-    if (SR && R.mouthCrosswalk) for (let q = SR.s - SR.w / 2 + 0.25; q < SR.s + SR.w / 2 - 0.3; q += 1.0) ribbon(white, q, q + 0.5, HW + 0.5, HW + 2.9, 0.02, 0.5);   // 16: 골목 입구 횡단보도 (보도가 이어지는 자리)
+    if (SR && R.mouthCrosswalk) {   // 둥근 모서리 쪽까지 줄무늬를 이어 그리되, 둥근 연석 안쪽(차도)까지만
+      const e = SR.w / 2, Rc = SR.round || 0, cxr = HW + 0.2 + Rc, xa = HW + 0.5, xb = HW + 2.9;
+      for (let q = SR.s - e - Rc + 0.25; q < SR.s + e + Rc - 0.3; q += 1.0) {
+        const d = Math.max(Math.abs(q - SR.s), Math.abs(q + 0.5 - SR.s)), k = d - (e + Rc);
+        const xm = d > e ? Math.min(xb, cxr - Math.sqrt(Math.max(0, Rc * Rc - k * k)) - 0.15) : xb;
+        if (xm - xa > 0.3) ribbon(white, q, q + 0.5, xa, xm, 0.02, 0.5);
+      }
+    }   // 16: 골목 입구 횡단보도 (보도가 이어지는 자리)
     if (E) {
       const xc = q => 8.75 + exitOff(q);
       const strip = (arr, sA, sB, fL, fR, y, step) => { for (let q = sA; q < sB - 1e-6; q += step) { const q2 = Math.min(q + step, sB);
@@ -2677,6 +2684,23 @@ function pedModelPose(pm, i, ph, mode, t) {
   pm.lastPh = ph;
   if (pm.cur !== act) { if (pm.cur) pm.cur.stop(); act.play(); pm.cur = act; }
   act.time = time; pm.mixer.update(0);
+  if (q && q.kick && !q.fly) kickArms(pm);
+}
+// 16: 킥보드 탄 사람은 두 팔을 앞 아래로 뻗어 손잡이를 잡는다 (위팔·아래팔 뼈를 그 방향으로 돌린다)
+const _kq = [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()], _kv = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+function kickArms(pm) {
+  if (!pm.kArms) pm.kArms = ['l', 'r'].map(sd => ['upperarm_', 'lowerarm_', 'hand_'].map(n => pm.body.getObjectByName(n + sd)));
+  pm.outer.updateMatrixWorld(true);
+  const dir = _kv[2].set(0, 0, -1).applyQuaternion(pm.outer.getWorldQuaternion(_kq[0])).multiplyScalar(0.7); dir.y -= 0.6; dir.normalize();   // 앞으로 0.7 : 아래로 0.6
+  const aim = (bone, child) => {
+    if (!bone || !child) return;
+    bone.updateMatrixWorld(true);
+    const cur = child.getWorldPosition(_kv[0]).sub(bone.getWorldPosition(_kv[1])).normalize();
+    const d = _kq[0].setFromUnitVectors(cur, dir), wq = bone.getWorldQuaternion(_kq[1]), pq = bone.parent.getWorldQuaternion(_kq[2]).invert();
+    bone.quaternion.copy(pq.multiply(d.multiply(wq)));
+    bone.updateMatrixWorld(true);
+  };
+  pm.kArms.forEach(([u, l, h]) => { aim(u, l); aim(l, h); });
 }
 const DIZZY_TEX = texFrom(128, 128, g => {   // 소용돌이 + 작은 별 세 개
   g.strokeStyle = '#ffe14a'; g.lineWidth = 7; g.lineCap = 'round'; g.beginPath();
@@ -3910,7 +3934,7 @@ function drawWorld(f, showPlayer) {
   { const kick = G.peds.some(q => q.kick); if (G.peds.some(q => q.bike) && (!bikeMesh || !!bikeMesh.userData.kick !== kick)) { if (bikeMesh) scene.remove(bikeMesh); bikeMesh = kick ? makeKick() : makeBike(); bikeMesh.userData.kick = kick; } }   // 16: 전동 킥보드
   if (bikeMesh) {   // 자전거: 타고 있을 때는 서 있고, 부딪힌 뒤에는 옆으로 쓰러져 있다
     const on = !!f.bk && G.peds.some(q => q.bike); bikeMesh.visible = on;
-    if (on) { const [bs, bx, lie] = f.bk; wpos(bs, bx, h(bs) + 0.04 * lie, bikeMesh.position); bikeMesh.userData.kick ? bikeMesh.rotation.set(0, -wyaw(bs), lie * Math.PI / 2) : bikeMesh.rotation.set(lie * Math.PI / 2, 0, 0); }
+    if (on) { const [bs, bx, lie] = f.bk; wpos(bs, bx, h(bs) + 0.04 * lie + (bikeMesh.userData.kick ? floorAt(bs, bx) : 0), bikeMesh.position); bikeMesh.userData.kick ? bikeMesh.rotation.set(0, -wyaw(bs), lie * Math.PI / 2) : bikeMesh.rotation.set(lie * Math.PI / 2, 0, 0); }   // 킥보드는 인도 위면 인도 높이에
   }
   updateCrashFx(f.t, showPlayer ? null : eyeV.set(f.px + SEAT, h(f.ps) + EYE, -f.ps));
 }
