@@ -2679,7 +2679,7 @@ function makePedModel() {
 // 모델 자세: 걷는 거리(위상)로 걷기·뛰기 동작의 시각을 정한다 (리플레이에서도 똑같이 나오도록 시간이 아니라 위상으로)
 function pedModelPose(pm, i, ph, mode, t) {
   const q = G.peds[i]; let act, time;
-  if (mode > 0.5 || (q && q.kick && !q.fly)) { act = pm.acts.idle; time = 0; }   // 날아가거나 쓰러진 상태 / 킥보드 탄 사람은 서 있는 자세: 팔다리를 몸에 붙인 선 자세 (몸 전체는 spin이 돌린다)
+  if (mode > 0.5 || (q && q.kick)) { act = pm.acts.idle; time = 0; }   // 날아가거나 쓰러진 상태 / 킥보드 탄 사람은 서 있는 자세: 팔다리를 몸에 붙인 선 자세 (몸 전체는 spin이 돌린다)
   // 걸음 위상이 바뀌면 '움직인 시각'을 기록. 화면이 계산보다 자주 그려져 같은 위상이 두 번 나와도 걷기를 유지하도록 0.25초 넘게 멈춰야 서 있음
   else if (Math.abs(ph - pm.lastPh) > 1e-6 || !(t >= pm.moveT) || t - pm.moveT < 0.25) {
     if (Math.abs(ph - pm.lastPh) > 1e-6 || !(t >= pm.moveT)) pm.moveT = t;
@@ -2690,7 +2690,7 @@ function pedModelPose(pm, i, ph, mode, t) {
   pm.lastPh = ph;
   if (pm.cur !== act) { if (pm.cur) pm.cur.stop(); act.play(); pm.cur = act; }
   act.time = time; pm.mixer.update(0);
-  if (q && q.kick && !q.fly) kickArms(pm);
+  if (q && q.kick && mode < 0.5) kickArms(pm);   // 그리는 장면(프레임) 기준: 리플레이에서도 충돌 전에는 타고 있는 자세
 }
 // 16: 킥보드 탄 사람은 두 팔을 앞 아래로 뻗어 손잡이를 잡는다 (위팔·아래팔 뼈를 그 방향으로 돌린다)
 const _kq = [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()], _kv = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
