@@ -2692,7 +2692,7 @@ function pedModelPose(pm, i, ph, mode, t) {
   act.time = time; pm.mixer.update(0);
   // 16 킥보드 탄 사람: 그리는 장면(프레임) 기준으로 타는 중이면 손잡이 잡은 자세, 날아가거나 쓰러졌으면 팔다리가 널브러진 자세.
   // 정지 자세(idle 0초)는 값이 그대로라 동작 엔진이 뼈를 다시 쓰지 않으므로, 손댄 뼈는 매번 처음 자세(kRest)로 되돌린 뒤 바꾼다
-  if (q && q.kick) { kickRest(pm); if (mode < 0.5) kickArms(pm); else kickSprawl(pm); pm.kMod = true; }
+  if (q && q.kick) { kickRest(pm); if (mode < 0.5) kickArms(pm); pm.kMod = true; }   // 날아가거나 쓰러지면 다른 보행자처럼 팔다리를 몸에 붙인 자세 (kickSprawl은 쓰지 않음: 사용자 결정)
   else if (pm.kMod) { kickRest(pm); pm.kMod = false; }   // 같은 마네킹을 다른 시나리오에서 다시 쓸 때
 }
 // 16: 킥보드 탄 사람은 두 팔을 앞 아래로 뻗어 손잡이를 잡는다 (위팔·아래팔 뼈를 그 방향으로 돌린다)
