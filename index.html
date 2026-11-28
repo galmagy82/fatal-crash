@@ -995,6 +995,7 @@ const SCENARIOS = [
       '실제 차에서는 오른쪽 사이드미러와 어깨 너머로 확인합니다. 이 게임에는 거울이 없어 볼 수 없었습니다.',
     ],
     thumb: { s: 90, x: 8.75, lead: 5000 },
+    replayCam: { cam: [60, -18, 30], tgt: [128, 12, 0] },   // 리플레이 카메라: 큰길 왼쪽 뒤 높은 곳(s 60, x -18, 높이 30)에서 골목 입구 앞(s 128, x 12)을 본다
     hint: '우회전은 자동입니다. 브레이크로 속도를 조절하세요.',
     replay: 'plan', sightLines: false,
   },
@@ -4515,6 +4516,10 @@ function replayUpdate(dt) {
     const im = C.impacts.filter(r => r.t <= RP.t).pop() || C.impacts[0], y = h(im.s);
     target = wpos(im.s, im.x, y + 0.6);
     want = wpos(im.s - 13, -7, y + 9);   // 화물차에 가리지 않도록 맞은편 차로 쪽 위에서
+  } else if (SC.replayCam) {   // 16: 골목 입구 쪽을 높이서 비춘다 (뒤쪽 보도의 킥보드, 입구 횡단보도, 도는 내 차가 한 화면에). 골목 안으로 들어가면 옆으로 따라간다
+    const Q = SC.replayCam, dx = Math.max(0, f.px - Q.tgt[1]);
+    target = wpos(Q.tgt[0], Q.tgt[1] + dx, Q.tgt[2] + 1);
+    want = wpos(Q.cam[0], Q.cam[1] + dx * 0.8, Q.cam[2]);
   } else {
     target = wpos(f.ps + 45, -1, h(f.ps + 45) + 1);
     want = wpos(f.ps - 18, 30, Math.max(h(f.ps), h(f.ps + 60)) + 20);
