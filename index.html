@@ -983,7 +983,7 @@ const SCENARIOS = [
       { label: '보행자', title: '우회전 후 횡단보도 사고', alongS: true, s: 145.5, sEnd: 118, x0: 11.6, xEnd: 11.6, dir: -1, v: 1.44, scale: 1, stay: true, cap: '골목 입구 횡단보도를 건너는 사람이 있습니다.',
         body: '우회전 직후, 골목 입구 횡단보도를 건너던 사람이었습니다.' },
       // 전동 킥보드: 내 뒤쪽 보도를 따라 초속 6m(시속 약 22km)로 달려와 골목 입구를 가로지른다 (s 46)
-      { label: '전동 킥보드', title: '우회전 후 킥보드 사고', alongS: true, bike: true, kick: true, s: 85.3, sEnd: 400, x0: 12.8, xEnd: 12.8, dir: 1, v: 5.56, scale: 1, stay: true, coat: 0x2f6e9e, pants: 0x2b2f36, cap: '뒤쪽 보도에서 전동 킥보드가 골목 입구로 들어왔습니다.',
+      { label: '전동 킥보드', title: '우회전 후 킥보드 사고', alongS: true, bike: true, kick: true, slow: { s: 132.5, v: 4.17, dec: 3 }, s: 85.3, sEnd: 400, x0: 12.8, xEnd: 12.8, dir: 1, v: 5.56, scale: 1, stay: true, coat: 0x2f6e9e, pants: 0x2b2f36, cap: '뒤쪽 보도에서 전동 킥보드가 골목 입구로 들어왔습니다.',
         body: '보도를 따라 뒤에서 달려온 전동 킥보드는 거울 없이는 운전석에서 미리 볼 수 없었습니다.',
         bodyStruck: '횡단보도 위에 멈춰 선 내 차 옆으로 전동 킥보드가 달려와 부딪혔습니다. 횡단보도를 막고 서 있으면 보도를 지나는 사람·킥보드와 부딪힐 수 있습니다.' },
     ],
@@ -2778,10 +2778,10 @@ function kickStruck(me) {
   G.flags.struckDone = true;
   G.peds.forEach(q => {
     if (!q.kick || q.fly || !pedTouch(q, me.s, me.x, me.yaw || 0)) return;
-    const d = q.dir || 1; q.hitSpeed = q.v; q.struck = true;
-    q.fly = { s: q.s, x: q.x, y: 0.9 * q.scale, vs: d * q.v * 0.35, vx: 0, vy: 2.2, r: 0, rr: 3, ground: false, roll: 0, yaw: 0, bounces: 0 };
+    const d = q.dir || 1, kv = q.cv ?? q.v; q.hitSpeed = kv; q.struck = true;
+    q.fly = { s: q.s, x: q.x, y: 0.9 * q.scale, vs: d * kv * 0.35, vx: 0, vy: 2.2, r: 0, rr: 3, ground: false, roll: 0, yaw: 0, bounces: 0 };
     q.bk = { s: q.s - d * 0.3, x: q.x, vs: -d * 0.8, vx: 0.5 };
-    const rc = { t: G.t, a: 'me', b: 'ped', s: q.s, x: q.x, vs: q.v, sideA: 'none', sideB: 'none', dvA: 0.3, dvB: q.v, ped: true };
+    const rc = { t: G.t, a: 'me', b: 'ped', s: q.s, x: q.x, vs: kv, sideA: 'none', sideB: 'none', dvA: 0.3, dvB: kv, ped: true };
     rc.debris = makeDebris(rc, me, { id: 'ped' }); G.ch.impacts.push(rc);
   });
   thud(0.4);
@@ -2796,8 +2796,8 @@ function hitPeds(me) {
     const lowK = clamp((v * 3.6 - 5) / 15, 0, 1);   // 시속 5km → 0, 20km 이상 → 1: 느릴수록 덜 뜨고 덜 돈다 (아주 느리면 밀려 그 자리에 쓰러진다)
     if (q.bike) q.bk = { s: q.s, x: q.x, vs: v * 0.6, vx: (q.x - me.x) * 0.5 + 1 };   // 자전거는 사람과 따로 쓰러져 미끄러진다
     // 사고 재구성에서 흔히 쓰는 범위: 차 속도의 약 85~90%로 앞으로 떨어지고, 높이는 낮게 뜬다
-    if (Math.abs(me.vx) > Math.abs(me.vs)) { q.fly = { s: q.s, x: q.x + Math.sign(me.vx) * 0.3, y: 0.9 * q.scale, vs: me.vs * 0.87 + (q.dir || 1) * q.v * 0.5, vx: me.vx * 0.87,
-      vy: clamp(v * 0.145, 1.2, 3.5) * lowK, r: 0, rr: clamp(v * 0.35, 2, 9) * lowK, ground: false, roll: 0, yaw: 0, bounces: 0 }; if (q.bike) q.bk = { s: q.s, x: q.x, vs: me.vs * 0.5 + q.v * 0.5, vx: me.vx * 0.6 }; }   // 16: 골목으로 들어서는 차 (옆 방향으로 치였다)
+    if (Math.abs(me.vx) > Math.abs(me.vs)) { q.fly = { s: q.s, x: q.x + Math.sign(me.vx) * 0.3, y: 0.9 * q.scale, vs: me.vs * 0.87 + (q.dir || 1) * (q.cv ?? q.v) * 0.5, vx: me.vx * 0.87,
+      vy: clamp(v * 0.145, 1.2, 3.5) * lowK, r: 0, rr: clamp(v * 0.35, 2, 9) * lowK, ground: false, roll: 0, yaw: 0, bounces: 0 }; if (q.bike) q.bk = { s: q.s, x: q.x, vs: me.vs * 0.5 + (q.cv ?? q.v) * 0.5, vx: me.vx * 0.6 }; }   // 16: 골목으로 들어서는 차 (옆 방향으로 치였다)
     else q.fly = { s: Math.max(q.s, me.s + 2.4), x: q.x, y: 0.9 * q.scale, vs: v * 0.87, vx: (q.x - me.x) * 0.6 + (q.dir || 1) * (q.cv ?? q.v) * 0.5 + (k ? 0.4 : 0),
       vy: clamp(v * 0.145, 1.2, 3.5) * lowK, r: 0, rr: clamp(v * 0.35, 2, 9) * (k ? 1.15 : 1) * lowK, ground: false, roll: 0, yaw: 0, bounces: 0 };
     const rc = { t: G.t, a: 'me', b: 'ped', s: me.s + 2.2, x: (me.x + q.x) / 2, vs: v * 0.9, sideA: 'none', sideB: 'none', dvA: 0.5, dvB: v, ped: true };
@@ -2835,6 +2835,7 @@ function walkPeds(dt) {
   if (q.fly) return;
   if (q.startAt && G.t < q.startAt) return;
   if (q.alongS) {   // 16: 길(보도)을 따라 s 방향으로 움직인다 (dir +1: +s, -1: -s), sEnd에서 멈춘다
+    if (q.slow && !G.ch) { const S = q.slow; q.cv = Math.min(q.v, q.s < S.s ? Math.sqrt(S.v * S.v + 2 * S.dec * (S.s - q.s)) : S.v); }   // 16: 횡단보도 들머리(S.s)에 닿을 때 S.v가 되도록 줄이고, 그 뒤로는 천천히
     if (q.kick && G.ch) q.cv = Math.max(0, (q.cv ?? q.v) - 4 * dt);   // 16: 사고가 나면 킥보드는 속도를 줄여 선다 (4m/s²)
     const d = q.dir || 1, vq = q.kick ? (q.cv ?? q.v) : q.v; if (d > 0 ? q.s < q.sEnd : q.s > q.sEnd) { q.s += d * vq * dt; q.phase += vq * dt; }
     return;
