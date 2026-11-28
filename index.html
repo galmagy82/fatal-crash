@@ -975,6 +975,8 @@ const SCENARIOS = [
       { label: '2차로 차', fwd: true, s: 95, x: 5.25, v: 12, color: 0x3c4a3e },
       { label: '1차로 차', fwd: true, s: 40, x: 1.75, v: 13, color: 0x7a2a2a },
       { label: '맞은편 차', s: 260, x: -5.25, v: 12 }, { label: '맞은편 차', s: 360, x: -1.75, v: 13 },
+      // 골목 맞은편 차로(s 141.75)를 큰길 쪽(-x)으로 내려오는 차: 골목 입구 횡단보도 앞(가운데 x 17.5)에서 선다
+      { label: '골목 차', alleyOut: { stopX: 17.5 }, s: 141.75, x: 90, v: 8, color: 0x8e8e88 },
     ],
     peds: [
       // 골목 입구 횡단보도: 오른쪽 보도를 따라 내 쪽(-s)으로 걸어와 골목 입구를 건너는 사람 (초속 1.44m)
@@ -2903,6 +2905,7 @@ function startChain() {
   const p = G.p, tr = G.truck;
   const me = makeBody('me', p.s, p.x, p.v, 1, CAR_HL, CAR_HW, 1, 0); me.vx = p.latV;
   if (p.yaw) { me.yaw = p.yaw; me.vs = p.v * Math.cos(p.yaw); me.vx = -p.v * Math.sin(p.yaw); }   // 도는 중이었으면 그 방향으로 미끄러진다
+  if (p.path && p.path.kind === 'alley') me.vs -= p.latV;   // 16: 골목에서 옆(오른쪽 = -s)으로 움직이던 만큼
   const truck = makeBody('truck', tr.s, tr.x, tr.v, SC.truck.mass, SC.truck.hl, SC.truck.hw, SC.truck.dir || 1, SC.truck.brakes ? 7 : 0);   // 화물차는 급제동하지 않고 그대로 지나간다 (막히면 부딪힌다)
   const B = [me, truck];
   if (G.bait) B.push(makeBody('bait', G.bait.s, G.bait.x, G.bait.v, SC.bait.mass, SC.bait.hl, SC.bait.hw, 1, 0));   // 미끼 화물차도 급제동하지 않는다
@@ -3510,7 +3513,8 @@ function newRound() {
     const c = add(o.s, o.v, !!SC.oncomingHazard || !!o.hazard, o.x, o.color, !!o.parked, o.model); c.active = true; if (o.parked) c.parked = true; if (k === 0 && SC.oncomingHazard) G.hazard = c;
     if (o.label) c.label = o.label;
     if (o.turn) { Object.assign(c, { turn: o.turn, u: 0, s0: o.s, x0: c.x, v1: o.v, yaw: 0 }); addBlinker(carMeshes[c.idx]); }
-    if (o.cross) Object.assign(c, { cross: true, yaw: -Math.PI / 2 });   // 가로 도로를 오른쪽에서 왼쪽(-x)으로 달린다
+    if (o.cross) Object.assign(c, { cross: true, yaw: -Math.PI / 2 });
+    if (o.alleyOut) Object.assign(c, { alleyOut: o.alleyOut, yaw: -Math.PI / 2 });   // 16: 골목을 큰길 쪽(-x)으로 내려온다   // 가로 도로를 오른쪽에서 왼쪽(-x)으로 달린다
     if (o.queue) Object.assign(c, { queue: o.queue, vT: o.v, v: 0 });   // 신호 대기: 서 있다가 출발
     if (o.fwd) Object.assign(c, { fwd: true, yaw: 0 });                    // 나와 같은 방향으로 달리는 차
     if (o.follow) Object.assign(c, { follow: true, vT: o.v });
@@ -3729,7 +3733,7 @@ function step(dt) {
   // 아날로그 조향: 누르는 동안 옆으로 움직이고, 떼면 그 자리를 유지한다. 느릴수록 옆으로도 천천히 움직인다.
   const steer = onPath ? 0 : (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
   const latMax = 2.8 * clamp(p.v / 12, 0, 1);
-  p.latV += (steer * latMax - p.latV) * Math.min(1, dt * (steer ? 5 : 14));   // 떼면 빨리 멈춘다
+  if (!onPath) p.latV += (steer * latMax - p.latV) * Math.min(1, dt * (steer ? 5 : 14));   // 떼면 빨리 멈춘다 (경로를 따라가는 중에는 위 경로 코드가 정한다: 16 골목)
   if (!onPath) p.x += p.latV * dt;
   if (!onPath && (p.x < X_MIN || p.x > X_MAX)) { p.x = clamp(p.x, X_MIN, X_MAX); p.latV = 0; }
   if (R.tunnel && R.tunnel.twin && p.s > R.tunnel.s0 && p.s < R.tunnel.s1) {   // 쌍굴 안: 들어간 쪽 터널 벽 사이에서만 움직인다
@@ -3766,7 +3770,7 @@ function step(dt) {
   }
   if (G.bait) { const bt = G.bait, bl = slope(bt.s), bv = bl > 0.03 ? SC.bait.up : (bl < -0.03 ? SC.bait.down : SC.bait.flat); bt.v += (bv - bt.v) * Math.min(1, dt * 0.6); bt.s += bt.v * dt; }
   G.cars.forEach(c => { if (c.wakeT != null && G.t >= c.wakeT) { c.active = true; c.wakeT = null; } });
-  G.cars.forEach(c => { if (!c.active) return; if (c.uturn) uturnMove(c, dt); else if (c.turn) turnMove(c, dt); else if (c.cross) { c.x -= c.v * dt; if (c.x < -150) c.active = false; } else if (c.merge) mergeMove(c, dt); else if (c.drop) dropMove(c, dt); else if (c.exitCut) exitCutMove(c, dt); else if (c.alleyCut) alleyCutMove(c, dt); else if (c.laneStop) { const Q = c.laneStop; c.vp = Math.min(V_MAX, c.vp + 4.2 * (1 - c.vp / (V_MAX * 1.08)) * (Q.pace || 1) * dt); let cap = Math.min(c.vp, Math.sqrt(2 * Q.dec * Math.max(0, Q.stopS - c.s)));
+  G.cars.forEach(c => { if (!c.active) return; if (c.uturn) uturnMove(c, dt); else if (c.turn) turnMove(c, dt); else if (c.alleyOut) { c.v = Math.min(c.v, Math.sqrt(2 * 3 * Math.max(0, c.x - c.alleyOut.stopX))); c.x -= c.v * dt; } else if (c.cross) { c.x -= c.v * dt; if (c.x < -150) c.active = false; } else if (c.merge) mergeMove(c, dt); else if (c.drop) dropMove(c, dt); else if (c.exitCut) exitCutMove(c, dt); else if (c.alleyCut) alleyCutMove(c, dt); else if (c.laneStop) { const Q = c.laneStop; c.vp = Math.min(V_MAX, c.vp + 4.2 * (1 - c.vp / (V_MAX * 1.08)) * (Q.pace || 1) * dt); let cap = Math.min(c.vp, Math.sqrt(2 * Q.dec * Math.max(0, Q.stopS - c.s)));
       if (Q.yield) { for (const o of G.cars) if (o !== c && o.active && o.fwd && o.x - c.x < 5 && o.x > (Q.clearX ?? c.x - 1.5) && o.s > c.s - 4) {   // 앞이나 차로로 들어오는 차에 양보 (8m 간격)
           const gap = o.s - c.s; cap = Math.min(cap, Math.max(0, o.v + (gap - 8) * 0.8));
           if (Q.caution) cap = Math.min(cap, 5 + Math.max(0, gap - 8) * 0.25);   // 머리를 내민 차에 다가가며 미리 감속 (70m 앞 시속 약 74km → 20m 앞 시속 약 29km)
@@ -4133,6 +4137,7 @@ function carFault() {   // { me: {pct, chart, base}, [상대 id]: {...} } 또는
   if (e.type === 'uturn') return out(80, '차33-2', true);
   if (e.type === 'alleycut') return out(20, '차44-1', true);     // 도로가 아닌 곳(골목)에서 진입하는 차 vs 직진          // 우회전 vs 신호에 따른 유턴
   const fx = e.fx || {};   // 충돌 순간 위치 (crash에서 기록)
+  if (car && car.alleyOut) { if (fx.ps > R.sideRoad.s) return out(100, '차31-1', false); if (fx.os < R.sideRoad.s) return out(0, '차31-1', false); return null; }   // 16: 골목 중앙선(s = 골목 가운데) 침범
   const oncoming = car ? !car.fwd : (id === 'truck' && SC.truck.dir < 0);
   if (oncoming) { if (fx.px < 0) return out(100, '차31-1', false); if (fx.ox > 0) return out(0, '차31-1', false); return null; }   // 중앙선 침범
   // 충돌 직전 3초의 옆 움직임: 상대가 (나보다 먼저) 내 차로로 들어오고 있었다면, 이미 내 차로에 들어와 내가 뒤를 받았어도 끼어들기로 본다
