@@ -958,11 +958,46 @@ const SCENARIOS = [
     hint: '누르고 있는 동안 왼쪽·오른쪽으로 움직이고, 떼면 그 자리를 유지합니다.',
     replay: 'plan', sightLines: false,
   },
-  { id: '16', title: '노란불 교차로' },
-  { id: '17', title: '스쿨존 골목' },
-  { id: '18', title: '운전 중 메시지' },
-  { id: '19', title: '빗길 커브' },
-  { id: '20', title: '야간 무단횡단' },
+  {
+    id: '16', title: '우회전 후 횡단보도', ready: true,
+    info: '도심 왕복 6차로 → 오른쪽 골목 · 오후 5시 30분',
+    mission: { time: 30 },
+    // 11과 같은 왕복 6차로. 나는 3차로를 서행하며 신호 있는 횡단보도(처음부터 차량 녹색, 보행자 빨간불, 건너는 사람 없음)를 지나
+    // 오른쪽 골목(15와 같은 골목)으로 자동 우회전한다. 골목 입구(보도가 이어지는 자리)의 횡단보도를 사람이 건너오고,
+    // 기다렸다 출발하는 순간 내 뒤쪽 보도를 따라 달려온 전동 킥보드가 골목 입구를 가로지른다 (거울이 없어 미리 볼 수 없다)
+    road: { type: 'city4', lanes: 3, half: 10.5, flat: 14, xMin: 0.9, xMax: 9.6, hillStart: 1e6, hillEnd: 1e6 + 1, crest: 1e6, H: 0,
+      zoneStart: -1e4, zoneEnd: 1e4, goal: 1e4, crosswalk: 120, sideRoad: { s: 140, w: 4.5, len: 120 }, mouthCrosswalk: true },
+    xsig: { yellowAt: 1e9, redAt: 1e9, pedOn: 1e9, pedFlash: 1e9, pedOff: 1e9, greenAt: 1e9 },   // 신호가 바뀌지 않는다: 차량 녹색, 보행자 빨간불
+    // 3차로(x 8.75)를 시속 30km로 출발. 골목 바로 앞에서 타원으로 우회전(세로 7m, 가로 4.5m) → 골목 가운데(s 140)를 따라 +x로. 브레이크만 된다
+    player: { s: 60, v: 8.33, x: 8.75, path: { kind: 'alley', s0: 60, x0: 8.75, approach: 73, rx: 4.5, rs: 7, vcap: 8.33, v20: 5.56, vturn: 4.0, vexit: 8.33, goalU: 73 + 9 + 70 } },
+    truck: { type: 'truck', label: '화물차', parked: true, s: 5000, x: 40, up: 0, flat: 0, down: 0, mass: 6, hl: 5, hw: 1.25, height: 3.5 },
+    oncoming: [
+      { label: '2차로 차', fwd: true, s: 95, x: 5.25, v: 12, color: 0x3c4a3e },
+      { label: '1차로 차', fwd: true, s: 40, x: 1.75, v: 13, color: 0x7a2a2a },
+      { label: '맞은편 차', s: 260, x: -5.25, v: 12 }, { label: '맞은편 차', s: 360, x: -1.75, v: 13 },
+    ],
+    peds: [
+      // 골목 입구 횡단보도: 오른쪽 보도를 따라 내 쪽(-s)으로 걸어와 골목 입구를 건너는 사람 (초속 1.2m)
+      { label: '보행자', title: '우회전 후 횡단보도 사고', alongS: true, s: 155.5, sEnd: 118, x0: 11.6, xEnd: 11.6, dir: -1, v: 1.2, scale: 1, stay: true, cap: '골목 입구 횡단보도를 건너는 사람이 있습니다.' },
+      // 전동 킥보드: 내 뒤쪽 보도를 따라 초속 6m(시속 약 22km)로 달려와 골목 입구를 가로지른다
+      { label: '전동 킥보드', title: '우회전 후 킥보드 사고', alongS: true, bike: true, kick: true, s: 40, sEnd: 400, x0: 12.8, xEnd: 12.8, dir: 1, v: 6.0, scale: 1, stay: true, coat: 0x2f6e9e, pants: 0x2b2f36, cap: '뒤쪽 보도에서 전동 킥보드가 골목 입구로 들어왔습니다.' },
+    ],
+    capPedSeen: true,
+    noSeenLine: true,
+    lessons: [
+      '우회전 직후에는 보도와 횡단보도가 있습니다. 회전하면서 미리 속도를 줄이세요.',
+      '보행자가 다 건넜다고 끝이 아닙니다. 출발 전에 오른쪽 뒤에서 오는 전동 킥보드·자전거를 한 번 더 확인하세요.',
+      '실제 차에서는 오른쪽 사이드미러와 어깨 너머로 확인합니다. 이 게임에는 거울이 없어 볼 수 없었습니다.',
+    ],
+    thumb: { s: 60, x: 8.75, lead: 5000 },
+    hint: '우회전은 자동입니다. 브레이크로 속도를 조절하세요.',
+    replay: 'plan', sightLines: false,
+  },
+  { id: '17', title: '노란불 교차로' },
+  { id: '18', title: '스쿨존 골목' },
+  { id: '19', title: '운전 중 메시지' },
+  { id: '20', title: '빗길 커브' },
+  { id: '21', title: '야간 무단횡단' },
 ];
 let SC = SCENARIOS[0], R = SC.road, MISSION_T = SC.mission.time;
 const V_MAX = 50;                        // 최고속도 180km/h (m/s)
@@ -1624,6 +1659,7 @@ function buildRoad() {
     } else { along(walk, -HW - 3, -HW - 0.2, 0.15); M ? alongR(walk, HW + 0.2, HW + 3, 0.15, 2, M.s0 - M.len * Math.cos(M.ang) - 4, M.s1 + M.taper) : SR ? alongR(walk, HW + 0.2, HW + 3, 0.15, 2, SR.s - SR.w / 2, SR.s + SR.w / 2) : along(walk, HW + 0.2, HW + 3, 0.15); }   // 보도 (15: 골목 입구는 끊는다)
     along(white, -HW + 0.05, -HW + 0.2, 0.02); E ? ribbon(white, -320, E.s0, HW - 0.2, HW - 0.05, 0.02) : M ? alongR(white, HW - 0.2, HW - 0.05, 0.02, 2, M.s0, M.s1) : SR ? alongR(white, HW - 0.2, HW - 0.05, 0.02, 2, SR.s - SR.w / 2, SR.s + SR.w / 2) : along(white, HW - 0.2, HW - 0.05, 0.02);
     if (SR) ribbon(asphalt, SR.s - SR.w / 2, SR.s + SR.w / 2, HW + 0.2, HW + SR.len, 0, SR.w);   // 15: 골목 바닥
+    if (SR && R.mouthCrosswalk) for (let q = SR.s - SR.w / 2 + 0.25; q < SR.s + SR.w / 2 - 0.3; q += 1.0) ribbon(white, q, q + 0.5, HW + 0.5, HW + 2.9, 0.02, 0.5);   // 16: 골목 입구 횡단보도 (보도가 이어지는 자리)
     if (E) {
       const xc = q => 8.75 + exitOff(q);
       const strip = (arr, sA, sB, fL, fR, y, step) => { for (let q = sA; q < sB - 1e-6; q += step) { const q2 = Math.min(q + step, sB);
@@ -2046,6 +2082,7 @@ function buildSideRoadProps() {
   grp.children.forEach(m => { const gp = m.geometry && m.geometry.parameters; if (!gp || !(gp.width >= 3) || !(gp.depth >= 3)) return;
     const pl = new THREE.Mesh(new THREE.BoxGeometry(gp.width - 0.3, 0.3, gp.depth - 0.3), plateMat); pl.position.set(m.position.x, 0.15, m.position.z); foot.add(pl); });
   foot.visible = false; world.add(foot); alleyBld = grp; alleyFoot = foot;
+  if (!R.turnLane || !ix) return;   // 16: 골목만 (화살표·유턴 표지는 15)
   // 1차로 노면 화살표: 좌회전(앞으로 가다 왼쪽) + 유턴(왼쪽으로 돌아 아래로)
   const arrowM = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -6, map: texFrom(160, 512, g => {
     g.fillStyle = 'rgba(232,232,224,.92)'; g.strokeStyle = 'rgba(232,232,224,.92)'; g.lineCap = 'butt';
@@ -2585,7 +2622,7 @@ function makePedOld() {   // 예전 나무토막 인형 (?look=old). 보행자: 
 const pedPools = { proc: [], model: [] };
 let pedMeshes = pedPools.proc;
 // 3D 사람 모델: Quaternius Universal Animation Library의 마네킹 (CC0). assets/ped.glb = 모델 + 동작 4개만 남긴 가벼운 파일
-const PED_MODEL_SCENES = ['02', '06', '11'];   // 3D 사람 모델을 쓰는 시나리오
+const PED_MODEL_SCENES = ['02', '06', '11', '16'];   // 3D 사람 모델을 쓰는 시나리오
 let PED_GLTF = null;
 try {
   if (!LOOK_OLD && THREE.GLTFLoader && THREE.SkeletonUtils) new THREE.GLTFLoader().load('assets/ped.glb', g => { PED_GLTF = g; }, undefined, () => {});
@@ -2617,7 +2654,7 @@ function makePedModel() {
 // 모델 자세: 걷는 거리(위상)로 걷기·뛰기 동작의 시각을 정한다 (리플레이에서도 똑같이 나오도록 시간이 아니라 위상으로)
 function pedModelPose(pm, i, ph, mode, t) {
   const q = G.peds[i]; let act, time;
-  if (mode > 0.5) { act = pm.acts.idle; time = 0; }   // 날아가거나 쓰러진 상태: 팔다리를 몸에 붙인 선 자세 (몸 전체는 spin이 돌린다)
+  if (mode > 0.5 || (q && q.kick && !q.fly)) { act = pm.acts.idle; time = 0; }   // 날아가거나 쓰러진 상태 / 킥보드 탄 사람은 서 있는 자세: 팔다리를 몸에 붙인 선 자세 (몸 전체는 spin이 돌린다)
   // 걸음 위상이 바뀌면 '움직인 시각'을 기록. 화면이 계산보다 자주 그려져 같은 위상이 두 번 나와도 걷기를 유지하도록 0.25초 넘게 멈춰야 서 있음
   else if (Math.abs(ph - pm.lastPh) > 1e-6 || !(t >= pm.moveT) || t - pm.moveT < 0.25) {
     if (Math.abs(ph - pm.lastPh) > 1e-6 || !(t >= pm.moveT)) pm.moveT = t;
@@ -2637,6 +2674,16 @@ const DIZZY_TEX = texFrom(128, 128, g => {   // 소용돌이 + 작은 별 세 �
   g.fillStyle = '#fff2a8'; star(18, 30, 11); star(110, 40, 9); star(100, 104, 10);
 });
 // 자전거: 바퀴 두 개와 틀. 진행 방향(+x)으로 길게 놓인다
+// 전동 킥보드 (16): 낮은 발판 + 앞쪽 세로 손잡이 대 + 가로 손잡이 + 작은 바퀴 두 개. 길 방향(+s = -z)으로 길게 놓인다
+function makeKick() {
+  const g = new THREE.Group(), body = lambert(0x2b2f36), dark = lambert(0x111214), acc = lambert(0x2fae62);
+  g.add(box(0.18, 0.05, 1.0, body, 0, 0.13, 0));       // 발판
+  g.add(box(0.05, 1.0, 0.05, body, 0, 0.62, -0.46));   // 손잡이 대
+  g.add(box(0.52, 0.05, 0.06, dark, 0, 1.12, -0.46));  // 손잡이
+  g.add(box(0.19, 0.04, 0.2, acc, 0, 0.17, -0.38));    // 앞쪽 초록 장식 (공유 킥보드 느낌)
+  [0.45, -0.47].forEach(z => { const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.06, 14), dark); wh.rotation.z = Math.PI / 2; wh.position.set(0, 0.1, z); g.add(wh); });
+  g.visible = false; scene.add(g); return g;
+}
 function makeBike() {
   const g = new THREE.Group(), frame = lambert(0x2f7ad1), dark = lambert(0x1a1c1f);
   [-0.52, 0.52].forEach(x => { const wh = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.035, 6, 18), dark); wh.position.set(x, 0.33, 0); g.add(wh); });
@@ -2649,22 +2696,29 @@ function pedMeshAt(i) { while (pedMeshes.length <= i) pedMeshes.push(pedMeshes =
 // 보행자들의 현재 상태를 프레임용 숫자 목록으로: 한 사람당 [s, x, y, 회전, 걸음 위상, 날아가는 중(1)/걷는 중(0)]
 function pedFrame() {
   if (!G.peds.length) return null;
-  return G.peds.flatMap(q => q.fly ? [q.fly.s, q.fly.x, q.fly.y, q.fly.r, 0, 1] : [q.s, q.x, floorAt(q.s, q.x) + (q.bike ? 0.32 : 0), q.walkS ? (q.heading ? 10 + q.heading : 3 + (q.sway || 0)) : q.along ? 1 : (q.dir || 1) < 0 ? 2 : 0, q.phase, 0]);   // 걷는 중: 네 번째 값 1 = 인도를 따라 내 쪽으로
+  return G.peds.flatMap(q => q.fly ? [q.fly.s, q.fly.x, q.fly.y, q.fly.r, 0, 1] : [q.s, q.x, floorAt(q.s, q.x) + (q.bike ? (q.kick ? 0.17 : 0.32) : 0), q.alongS ? ((q.dir || 1) > 0 ? 3 : 1) : q.walkS ? (q.heading ? 10 + q.heading : 3 + (q.sway || 0)) : q.along ? 1 : (q.dir || 1) < 0 ? 2 : 0, q.phase, 0]);   // 걷는 중: 네 번째 값 1 = 인도를 따라 내 쪽으로
 }
 // 내 차(사고 후 미끄러지는 중이어도)와 겹친 보행자는 차 앞으로 튕겨 나가 떨어진 뒤 미끄러진다
 function bikeFrame() {
   const q = G.peds.find(x => x.bike); if (!q) return null;
   return q.bk ? [q.bk.s, q.bk.x, 1] : [q.s, q.x, 0];
 }
+// 차(가운데 s, x, 방향 yaw)와 사람이 닿았나: 차 길이 방향 ±2.4m, 폭 방향 ±(0.9 + 사람 폭). 도는 차는 돌아간 방향으로 본다 (16)
+function pedTouch(q, s, x, yaw) {
+  const ds = q.s - s, dx = q.x - x, c = Math.cos(yaw), sn = Math.sin(yaw);
+  return Math.abs(ds * c - dx * sn) < 2.4 && Math.abs(ds * sn + dx * c) < 0.9 + 0.25 * q.scale + (q.bike ? (q.kick ? 0.35 : 0.55) : 0);
+}
 function hitPeds(me) {
   const v = Math.hypot(me.vs, me.vx); if (v < 0.5) return;
   let any = false;
   G.peds.forEach((q, k) => {
-    if (q.fly || !(Math.abs(q.s - me.s) < 2.4 && Math.abs(q.x - me.x) < 0.9 + 0.25 * q.scale + (q.bike ? 0.55 : 0))) return;
+    if (q.fly || !pedTouch(q, me.s, me.x, me.yaw || 0)) return;
     q.hitSpeed = v; any = true;
     if (q.bike) q.bk = { s: q.s, x: q.x, vs: v * 0.6, vx: (q.x - me.x) * 0.5 + 1 };   // 자전거는 사람과 따로 쓰러져 미끄러진다
     // 사고 재구성에서 흔히 쓰는 범위: 차 속도의 약 85~90%로 앞으로 떨어지고, 높이는 낮게 뜬다
-    q.fly = { s: Math.max(q.s, me.s + 2.4), x: q.x, y: 0.9 * q.scale, vs: v * 0.87, vx: (q.x - me.x) * 0.6 + (q.dir || 1) * (q.cv ?? q.v) * 0.5 + (k ? 0.4 : 0),
+    if (Math.abs(me.vx) > Math.abs(me.vs)) { q.fly = { s: q.s, x: q.x + Math.sign(me.vx) * 0.3, y: 0.9 * q.scale, vs: me.vs * 0.87 + (q.dir || 1) * q.v * 0.5, vx: me.vx * 0.87,
+      vy: clamp(v * 0.145, 1.2, 3.5), r: 0, rr: clamp(v * 0.35, 2, 9), ground: false, roll: 0, yaw: 0, bounces: 0 }; if (q.bike) q.bk = { s: q.s, x: q.x, vs: me.vs * 0.5 + q.v * 0.5, vx: me.vx * 0.6 }; }   // 16: 골목으로 들어서는 차 (옆 방향으로 치였다)
+    else q.fly = { s: Math.max(q.s, me.s + 2.4), x: q.x, y: 0.9 * q.scale, vs: v * 0.87, vx: (q.x - me.x) * 0.6 + (q.dir || 1) * (q.cv ?? q.v) * 0.5 + (k ? 0.4 : 0),
       vy: clamp(v * 0.145, 1.2, 3.5), r: 0, rr: clamp(v * 0.35, 2, 9) * (k ? 1.15 : 1), ground: false, roll: 0, yaw: 0, bounces: 0 };
     const rc = { t: G.t, a: 'me', b: 'ped', s: me.s + 2.2, x: (me.x + q.x) / 2, vs: v * 0.9, sideA: 'none', sideB: 'none', dvA: 0.5, dvB: v, ped: true };
     rc.debris = makeDebris(rc, me, { id: 'ped' });
@@ -2689,6 +2743,7 @@ function floorAt(s, x) {
   if (R.type !== 'city4') return ax <= 4.7 ? 0 : Math.max(0, groundY(s, x) - h(s));   // 국도: 갓길까지는 도로 높이
   if (ax <= HW + 0.2) return 0;
   if (R.intersection && Math.abs(s - R.intersection) < HW + 0.2) return 0;   // 교차로(가로 도로) 위
+  if (R.sideRoad && x > 0 && Math.abs(s - R.sideRoad.s) < R.sideRoad.w / 2) return 0;   // 골목 입구 (보도 끊김)
   if (ax <= HW + 3) return 0.15;
   return Math.max(0, groundY(s, x) - h(s));
 }
@@ -2699,6 +2754,10 @@ function walkPeds(dt) {
   G.peds.forEach(q => {
   if (q.fly) return;
   if (q.startAt && G.t < q.startAt) return;
+  if (q.alongS) {   // 16: 길(보도)을 따라 s 방향으로 움직인다 (dir +1: +s, -1: -s), sEnd에서 멈춘다
+    const d = q.dir || 1; if (d > 0 ? q.s < q.sEnd : q.s > q.sEnd) { q.s += d * q.v * dt; q.phase += q.v * dt; }
+    return;
+  }
   if (q.walkS) {   // 길을 따라 GOAL 쪽(+s)으로 걷는 사람
     const S = q.stg, T = S ? G.t - S.at : -1, tot = S ? S.inDur + S.hold + S.outDur : 0, on = S && T >= 0 && T < tot;
     const X = q.cross;
@@ -3400,7 +3459,7 @@ const keys = { up: false, down: false, left: false, right: false };
 function newRound() {
   const variant = { hazard: true };   // 추월 금지 구간에서 중앙선을 넘으면 맞은편 차는 항상 나온다
   carMeshes.forEach(m => scene.remove(m.outer)); carMeshes = [];
-  G = { t: 0, variant, p: { s: SC.player.s, x: SC.player.x, v: SC.player.v, latV: 0, u: 0, path: SC.player.path ? { ...SC.player.path, done: false } : null, yaw: SC.player.path ? Math.PI / 2 : 0 }, truck: { s: SC.truck.s, x: SC.truck.x, v: SC.truck.up }, bait: SC.bait ? { s: SC.bait.s, x: SC.bait.x, v: SC.bait.up } : null,
+  G = { t: 0, variant, p: { s: SC.player.s, x: SC.player.x, v: SC.player.v, latV: 0, u: 0, path: SC.player.path ? { ...SC.player.path, done: false } : null, yaw: SC.player.path ? (SC.player.path.kind === 'alley' ? 0 : Math.PI / 2) : 0 }, truck: { s: SC.truck.s, x: SC.truck.x, v: SC.truck.up }, bait: SC.bait ? { s: SC.bait.s, x: SC.bait.x, v: SC.bait.up } : null,
     cars: [], frames: [], events: [], flags: {}, end: null, hazard: null, camPitch: 0, yaw: 0, acc: 0 };
   const add = (s, v, hazard, x, color, dark, model) => { const c = { s, v, x: x ?? -1.75, active: !hazard, isHazard: !!hazard, idx: G.cars.length }; G.cars.push(c); carMeshes.push(makeCar(color ?? [0xb9b9b4, 0x7a2a2a, 0x3c4a3e, 0xd0b04a][c.idx % 4], !dark, model)); return c; };   // dark: 시동 꺼진 차 (전조등 없음)
   SC.oncoming.forEach((o, k) => {
@@ -3560,6 +3619,16 @@ function pathArc(P) {
 }
 const pathArcLen = P => { const t = pathArc(P); return t[t.length - 1]; };
 function pathPose(P, u) {
+  if (P.kind === 'alley') {   // 16: 큰길(+s)을 따라 오다가 오른쪽으로 타원 1/4을 돌아 골목(+x)으로. yaw: 0 → -π/2
+    const tab = pathArc(P), L = tab[tab.length - 1], sA = P.s0 + P.approach;
+    if (u <= P.approach) return { s: P.s0 + u, x: P.x0, yaw: 0 };
+    if (u <= P.approach + L) {
+      const d = u - P.approach; let i = 1; while (i < tab.length - 1 && tab[i] < d) i++;
+      const th = ((i - 1) + (d - tab[i - 1]) / Math.max(1e-6, tab[i] - tab[i - 1])) / (tab.length - 1) * Math.PI / 2;
+      return { s: sA + P.rs * Math.sin(th), x: P.x0 + P.rx * (1 - Math.cos(th)), yaw: Math.atan2(-P.rx * Math.sin(th), P.rs * Math.cos(th)) };
+    }
+    return { s: sA + P.rs, x: P.x0 + P.rx + (u - P.approach - L), yaw: -Math.PI / 2 };
+  }
   const sx = P.ix + 5.25, cx = P.toX + P.rx, cs = sx + P.rs, x0 = cx + P.approach, tab = pathArc(P), L = tab[tab.length - 1];
   if (u <= P.approach) return { s: sx, x: x0 - u, yaw: Math.PI / 2 };
   if (u <= P.approach + L) {
@@ -3583,13 +3652,13 @@ function step(dt) {
     if (exiting && P.doneT === undefined) P.doneT = t;
     // 다가오는 동안: 시속 50km를 유지하다가 코너 바로 앞에서 급하게 줄인다 (감속 6m/s²): 회전 3m 전 v20(시속 20km), 회전 시작점 vturn
     const toArc = P.approach - p.u, v20 = P.v20 || P.vcap, A = 2 * 6;
-    const cap = exiting ? V_MAX : toArc > 0 ? Math.min(P.vcap, Math.sqrt(v20 * v20 + A * Math.max(0, toArc - 3)), Math.sqrt(P.vturn * P.vturn + A * toArc)) : P.vturn;
+    const cap = exiting ? (P.vexit || V_MAX) : toArc > 0 ? Math.min(P.vcap, Math.sqrt(v20 * v20 + A * Math.max(0, toArc - 3)), Math.sqrt(P.vturn * P.vturn + A * toArc)) : P.vturn;
     if (keys.down) p.v -= 8 * dt;
     else p.v += exiting ? 4.2 * (1 - p.v / (V_MAX * 1.08)) * (P.boost || 1) * dt : 3 * dt;
     p.v = clamp(p.v, 0, cap); p.latV = 0;   // 상한보다 빠르면 상한까지 (저절로 감속)
     const prevU = p.u; p.u += p.v * dt;
     if (prevU < P.approach && p.u >= P.approach) ev('turnMe');
-    if (p.u >= arcEnd) { P.done = true; p.u = arcEnd; }
+    if (P.kind !== 'alley' && p.u >= arcEnd) { P.done = true; p.u = arcEnd; }   // 16: 골목에서는 끝까지 경로를 따라간다
     const q = pathPose(P, p.u); p.x = q.x; p.yaw = q.yaw; p.s = q.s;
   }
   // 가속 페달은 항상 밟혀 있다 (빠를수록 덜 붙는다). 브레이크를 밟는 동안만 느려진다.
@@ -3713,7 +3782,7 @@ function step(dt) {
     }
   }
   G.frames.push({ t, br: held || (keys.down && p.v > 0.1) ? 1 : 0, ps: p.s, px: p.x, py: p.yaw || 0, ts: tr.s, bs: G.bait ? G.bait.s : undefined, cs: G.cars.map(c => c.active ? c.s : NaN), cx: G.cars.map(c => c.x), cy: G.cars.map(c => c.yaw || 0), cb: G.cars.map(c => c.brk ? 1 : 0), tbk: tr.brk ? 1 : 0, pd: pedFrame(), bk: bikeFrame() });   // cb·tbk: 브레이크등 (차들·앞차)
-  if (p.v > 0.5 && G.peds.some(q => Math.abs(q.s - p.s) < 2.4 && Math.abs(q.x - p.x) < 0.9 + 0.25 * q.scale + (q.bike ? 0.55 : 0))) return crash('ped', null);
+  if (p.v > 0.5 && G.peds.some(q => pedTouch(q, p.s, p.x, p.yaw || 0))) return crash('ped', null);
 
   if (Math.abs(tr.s - p.s) < SC.truck.hl + 2.0 && Math.abs(tr.x - p.x) < SC.truck.hw + 0.85) return crash('truck', null);
   if (G.bait && Math.abs(G.bait.s - p.s) < SC.bait.hl + 2.0 && Math.abs(G.bait.x - p.x) < SC.bait.hw + 0.85) return crash('bait', null);
@@ -3723,7 +3792,7 @@ function step(dt) {
     if (Math.abs(c.s - p.s) < CAR_HL * cy + CAR_HW * sy + 2.15 && Math.abs(c.x - p.x) < CAR_HL * sy + CAR_HW * cy + 0.85) return crash(c.uturn ? 'uturn' : c.turn ? 'turn' : c.cross ? 'runner' : c.merge ? 'merge' : c.drop ? 'drop' : c.exitCut ? 'exitcut' : c.alleyCut ? 'alleycut' : c.parked ? 'parked' : c.jam ? 'jam' : c.fwd ? 'lane' : 'head', c);
   }
 
-  if (p.s >= R.goal) finish();
+  if (p.s >= R.goal || (p.path && p.path.goalU && p.u >= p.path.goalU)) finish();
 }
 
 
@@ -3818,10 +3887,10 @@ function drawWorld(f, showPlayer) {
     if (pm.isModel) pedModelPose(pm, i, qph, mode, f.t);
     if (pm.isModel && mode > 0.5) liftAboveFloor(pm, h(qs) + floorAt(qs, qx));   // 날아가거나 쓰러진 마네킹이 땅을 뚫지 않게
   });
-  if (G.peds.some(q => q.bike) && !bikeMesh) bikeMesh = makeBike();
+  { const kick = G.peds.some(q => q.kick); if (G.peds.some(q => q.bike) && (!bikeMesh || !!bikeMesh.userData.kick !== kick)) { if (bikeMesh) scene.remove(bikeMesh); bikeMesh = kick ? makeKick() : makeBike(); bikeMesh.userData.kick = kick; } }   // 16: 전동 킥보드
   if (bikeMesh) {   // 자전거: 타고 있을 때는 서 있고, 부딪힌 뒤에는 옆으로 쓰러져 있다
     const on = !!f.bk && G.peds.some(q => q.bike); bikeMesh.visible = on;
-    if (on) { const [bs, bx, lie] = f.bk; wpos(bs, bx, h(bs) + 0.04 * lie, bikeMesh.position); bikeMesh.rotation.set(lie * Math.PI / 2, 0, 0); }
+    if (on) { const [bs, bx, lie] = f.bk; wpos(bs, bx, h(bs) + 0.04 * lie, bikeMesh.position); bikeMesh.userData.kick ? bikeMesh.rotation.set(0, -wyaw(bs), lie * Math.PI / 2) : bikeMesh.rotation.set(lie * Math.PI / 2, 0, 0); }
   }
   updateCrashFx(f.t, showPlayer ? null : eyeV.set(f.px + SEAT, h(f.ps) + EYE, -f.ps));
 }
@@ -3868,7 +3937,7 @@ function drawNav(ps, px) {
   }
   const P = G.p && G.p.path, turning = !!(P && !P.done), yaw = turning ? (G.p.yaw || 0) : 0;
   // 지도 돌리기: 내 위치(mx)를 축으로 yaw만큼. 축의 화면 위치는 다가올 때 가운데 → 다 돌면 평소 자리로 서서히
-  const mx = X(px), pivot = turning ? cx + (mx - cx) * (1 - clamp(yaw / (Math.PI / 2), 0, 1)) : mx;   // 다 돌면 실제 내 자리로 (끊김 없이)
+  const mx = X(px), pivot = turning ? cx + (mx - cx) * (1 - clamp(Math.abs(yaw) / (Math.PI / 2), 0, 1)) : mx;   // 다 돌면 실제 내 자리로 (끊김 없이)
   g.save(); g.translate(pivot, myY); g.rotate(yaw); g.translate(-mx, -myY);
   const E0 = -2 * Math.max(W, H), E1 = 3 * Math.max(W, H), EW = E1 - E0;   // 돌려도 빈 곳이 없게 넓게
   g.fillStyle = '#1e2934';   // 길가 블록
@@ -3876,6 +3945,7 @@ function drawNav(ps, px) {
   const road = '#46525f';
   if (ix) { const y = Y(ix); g.fillStyle = road; g.fillRect(E0, y - RW / 2, EW, RW); }
   g.fillStyle = road; g.fillRect(cx - RW / 2, E0, RW, EW);
+  if (R.sideRoad && R.mouthCrosswalk) { g.fillStyle = road; g.fillRect(cx + RW / 2, Y(R.sideRoad.s) - R.sideRoad.w * k * 1.6, E1, R.sideRoad.w * k * 3.2); }   // 16: 오른쪽 골목
   sideAlleys().forEach(a => a.side < 0 ? g.fillRect(0, Y(a.s) - 5, cx - RW / 2, 10) : g.fillRect(cx + RW / 2, Y(a.s) - 5, W, 10));   // 갈림 골목들
   if (R.exit) {   // 14: 오른쪽으로 갈라져 나가는 출구
     const ya = Y(R.exit.s0); g.strokeStyle = road; g.lineWidth = 9; g.beginPath(); g.moveTo(cx + RW / 2 - 4, ya); g.lineTo(W + 10, ya - 90); g.stroke();
@@ -3889,9 +3959,9 @@ function drawNav(ps, px) {
   const yg = Y(R.goal);
   g.strokeStyle = 'rgba(70,150,255,.95)'; g.lineWidth = 4; g.lineCap = 'round'; g.lineJoin = 'round'; g.beginPath();
   if (turning) {   // 남은 회전 경로를 따라 그린 뒤 큰길로
-    const end = P.approach + pathArcLen(P);
+    const end = P.goalU || P.approach + pathArcLen(P);
     for (let u = G.p.u; ; u = Math.min(end, u + 1)) { const q = pathPose(P, u); u === G.p.u ? g.moveTo(X(q.x), Y(q.s)) : g.lineTo(X(q.x), Y(q.s)); if (u >= end) break; }
-    g.lineTo(X(P.toX), yg); g.stroke();
+    if (!P.goalU) g.lineTo(X(P.toX), yg); g.stroke();
   } else {
     const lx = R.type === 'alley' ? cx : R.lanes === 3 ? X(5.25) : cx + RW / 4, y1 = myY + 10, top = Math.max(0, yg);   // 내 방향 차로 가운데에 4px 선
     if (y1 > top) { g.moveTo(lx, top); g.lineTo(lx, y1); g.stroke(); }
@@ -3915,6 +3985,7 @@ function drawNav(ps, px) {
   g.fillStyle = '#fff'; g.fill(); g.lineWidth = 1.5; g.strokeStyle = '#1f5fc4'; g.stroke();
   // 안내 문구: 우회전 경로 중이면 교차로까지 + 우회전, 앞에 교차로가 있으면 교차로까지, 아니면 목적지까지
   const toI = ix ? ix - HW - ps : -1, turnEl = document.querySelector('.nav-turn');
+  if (turning && P.goalU && G.p.u > P.approach) { turnEl.textContent = '↑'; $('navDist').textContent = Math.max(0, Math.round(P.goalU - G.p.u)) + 'm'; $('navText').textContent = '목적지'; return; }   // 16: 골목에 들어선 뒤
   if (turning) { turnEl.textContent = '↱'; $('navDist').textContent = Math.max(0, Math.round(P.approach - G.p.u)) + 'm'; $('navText').textContent = '교차로에서 우회전'; return; }
   if (turnEl.textContent !== '↑') turnEl.textContent = '↑';
   if (toI > 0) { $('navDist').textContent = Math.round(toI) + 'm'; $('navText').textContent = '교차로에서 직진'; }
@@ -4036,6 +4107,7 @@ function carFault() {   // { me: {pct, chart, base}, [상대 id]: {...} } 또는
 }
 function pedFault(q) {   // 보행자 한 사람: { car: 차 과실 %, chart, base } 또는 null
   const t = q.hitT ?? G.end.t;
+  if (q.alongS) return q.bike ? null : { car: 100, chart: '보13', base: false };   // 16: 골목 입구 횡단보도 보행자 (킥보드 도표는 아직 확인 못 함)
   if (SC.xsig) {   // 신호 있는 횡단보도 (11)
     const X = SC.xsig, entry = Math.abs(q.x0) > R.half ? (q.startAt || 0) + (Math.abs(q.x0) - R.half) / (q.cv ?? q.v) : (q.startAt || 0);
     const pedSig = tt => tt < X.pedOn ? 'red' : tt < X.pedFlash ? 'green' : tt < X.pedOff ? 'flash' : 'red';
