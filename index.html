@@ -2793,18 +2793,19 @@ function hitPeds(me) {
   G.peds.forEach((q, k) => {
     if (q.fly || !pedTouch(q, me.s, me.x, me.yaw || 0)) return;
     q.hitSpeed = v; any = true;
+    const lowK = clamp((v * 3.6 - 5) / 15, 0, 1);   // 시속 5km → 0, 20km 이상 → 1: 느릴수록 덜 뜨고 덜 돈다 (아주 느리면 밀려 그 자리에 쓰러진다)
     if (q.bike) q.bk = { s: q.s, x: q.x, vs: v * 0.6, vx: (q.x - me.x) * 0.5 + 1 };   // 자전거는 사람과 따로 쓰러져 미끄러진다
     // 사고 재구성에서 흔히 쓰는 범위: 차 속도의 약 85~90%로 앞으로 떨어지고, 높이는 낮게 뜬다
     if (Math.abs(me.vx) > Math.abs(me.vs)) { q.fly = { s: q.s, x: q.x + Math.sign(me.vx) * 0.3, y: 0.9 * q.scale, vs: me.vs * 0.87 + (q.dir || 1) * q.v * 0.5, vx: me.vx * 0.87,
-      vy: clamp(v * 0.145, 1.2, 3.5), r: 0, rr: clamp(v * 0.35, 2, 9), ground: false, roll: 0, yaw: 0, bounces: 0 }; if (q.bike) q.bk = { s: q.s, x: q.x, vs: me.vs * 0.5 + q.v * 0.5, vx: me.vx * 0.6 }; }   // 16: 골목으로 들어서는 차 (옆 방향으로 치였다)
+      vy: clamp(v * 0.145, 1.2, 3.5) * lowK, r: 0, rr: clamp(v * 0.35, 2, 9) * lowK, ground: false, roll: 0, yaw: 0, bounces: 0 }; if (q.bike) q.bk = { s: q.s, x: q.x, vs: me.vs * 0.5 + q.v * 0.5, vx: me.vx * 0.6 }; }   // 16: 골목으로 들어서는 차 (옆 방향으로 치였다)
     else q.fly = { s: Math.max(q.s, me.s + 2.4), x: q.x, y: 0.9 * q.scale, vs: v * 0.87, vx: (q.x - me.x) * 0.6 + (q.dir || 1) * (q.cv ?? q.v) * 0.5 + (k ? 0.4 : 0),
-      vy: clamp(v * 0.145, 1.2, 3.5), r: 0, rr: clamp(v * 0.35, 2, 9) * (k ? 1.15 : 1), ground: false, roll: 0, yaw: 0, bounces: 0 };
+      vy: clamp(v * 0.145, 1.2, 3.5) * lowK, r: 0, rr: clamp(v * 0.35, 2, 9) * (k ? 1.15 : 1) * lowK, ground: false, roll: 0, yaw: 0, bounces: 0 };
     const rc = { t: G.t, a: 'me', b: 'ped', s: me.s + 2.2, x: (me.x + q.x) / 2, vs: v * 0.9, sideA: 'none', sideB: 'none', dvA: 0.5, dvB: v, ped: true };
     rc.debris = makeDebris(rc, me, { id: 'ped' });
     G.ch.impacts.push(rc);
     me.vs *= 0.97;   // 보행자 무게만큼 아주 조금 느려진다
   });
-  if (any) thud(0.5);
+  if (any) thud(0.5 * (0.3 + 0.7 * clamp((v * 3.6 - 5) / 15, 0, 1)));   // 느릴수록 작은 소리
 }
 // 걷는 속도는 정해져 있다. run이 있는 사람은 앞차 앞에서 나온 뒤(앞차 오른쪽 끝을 지난 뒤) 정해진 시간이 지나면 뛰기 시작한다
 // 인도에 오르면 멈췄다가, 모두 올라오면 함께 인도를 따라 내 쪽(-s)으로 걷는다 (어린이도 다시 걷는 속도로)
@@ -4145,12 +4146,13 @@ function crash(type, car) {
   const ob = car || (type === 'truck' ? tr : type === 'bait' ? G.bait : null);   // 과실 판정용: 충돌 순간 나와 상대의 위치
   G.end.fx = { ps: p.s, px: p.x, os: ob ? ob.s : NaN, ox: ob ? ob.x : NaN };
   { const r = rec(); r.plays++; r.crashes++; r.last = 'crash'; } saveStats();
-  engine(0, false); glassSound(); show('hud', false); show('touch', false); show('nav', false);
+  const softPed = type === 'ped' && p.v * 3.6 < 20;   // 사람·킥보드와 느리게(시속 20km 미만) 부딪힘: 유리 깨지는 소리 없이, 번쩍임도 약하게
+  engine(0, false); if (!softPed) glassSound(); show('hud', false); show('touch', false); show('nav', false);
   $('crashLine').textContent = '';
   startChain();   // 이 순간부터 모든 차를 물리로 계산한다 (첫 충돌도 여기서 처리)
   if (type === 'ped') { G.ch.shakeT = 0; hitPeds(G.ch.byId.me); pushChainFrame(); }
   state = 'crashing';
-  const fl = $('flash'); fl.style.transition = 'none'; fl.style.opacity = '0.9'; void fl.offsetWidth; fl.style.transition = 'opacity .45s ease-out'; fl.style.opacity = '0';
+  const fl = $('flash'); fl.style.transition = 'none'; fl.style.opacity = softPed ? String(0.25 + 0.65 * clamp((p.v * 3.6 - 5) / 15, 0, 1)) : '0.9'; void fl.offsetWidth; fl.style.transition = 'opacity .45s ease-out'; fl.style.opacity = '0';
   // 깨진 정도: 차 충돌은 내 차가 받은 충격(Δv), 보행자는 내 차 속도. 시속 10km → 0, 80km 이상 → 1
   const meB = G.ch.byId.me, hitKmh = type === 'ped' || !meB.impacts.length ? p.v * 3.6 : meB.impacts[0].dv * 3.6;
   // 앞유리 금은 충돌 장면을 먼저 보여 준 뒤 그린다 (같은 프레임에 그리면 폰에서 그 순간 화면이 멈칫한다)
