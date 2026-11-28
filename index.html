@@ -4052,17 +4052,27 @@ function pedFault(q) {   // 보행자 한 사람: { car: 차 과실 %, chart, ba
 }
 const faultText = (f, mine) => `${f.base && !f.label ? '기본 ' : ''}과실 ${mine}%` + (f.label ? ` (${f.label})` : '');   // 도표 번호는 보이지 않는다 (사용자 결정)
 function injuryRows() {
-  if (G.end.type === 'ped') {   // 부딪힌 보행자마다: 차의 충돌 속도로 사망 확률
-    return G.peds.filter(q => q.hitSpeed).map(q => { const v = Math.round(q.hitSpeed * 3.6), f = pedFault(q);
-      return { who: q.label, stat: `충돌 속도 ${v}km/h`, risk: pedRisk(v), hits: [], fault: f ? `${f.base ? '기본 ' : ''}과실 보행자 ${100 - f.car}% : 차 ${f.car}%` : '' }; });
-  }
-  const FAULT = carFault(), r0 = G.ch.impacts[0];
+  const isPed = G.end.type === 'ped';
+  const FAULT = isPed ? null : carFault(), r0 = G.ch.impacts[0];
   const C = G.ch, involved = C.bodies.filter(b => b.impacts.length && !(b.car && b.car.parked) && !(b.id === 'truck' && SC.truck.parked));   // 빈 주차 차는 사람이 없다
   const onc = involved.filter(b => b.car);
   const plain = onc.filter(b => !b.car.label);   // 이름이 따로 없는 맞은편 차만 번호를 붙인다
   const nameOf = b => b.id === 'me' ? '나' : b.id === 'truck' ? SC.truck.label + ' 운전자' : b.id === 'bait' ? SC.bait.label + ' 운전자' : b.car.label ? b.car.label + ' 운전자' : '맞은편 운전자' + (plain.length > 1 ? ' ' + (plain.indexOf(b) + 1) : '');   // 번호는 사고에 휘말린 차들 사이의 순서
   const thingOf = id => { if (id === 'me') return '내 차'; if (id === 'wall') return '건물'; if (id === 'truck') return SC.truck.label; if (id === 'bait') return SC.bait.label; const c = G.cars[+id.slice(1)]; return c && c.label ? c.label : '맞은편 차' + (plain.length > 1 ? ' ' + (plain.findIndex(b => b.id === id) + 1) : ''); };
   involved.sort((a, b) => (a.id === 'me' ? -1 : b.id === 'me' ? 1 : a.impacts[0].t - b.impacts[0].t));
+  if (isPed) {   // 보행자 사고도 차 대 차처럼: 나(1차 보행자 + 이어진 충돌) / 보행자마다 / 휘말린 다른 운전자. 과실은 각자 자기 몫만
+    const peds = G.peds.filter(q => q.hitSpeed), pf = peds.map(q => pedFault(q)), f0 = pf.find(f => f), meB = C.byId.me;
+    const meHits = peds.map(q => ({ with: q.label, speed: Math.round(q.hitSpeed * 3.6), dv: Math.max(1, Math.round(q.hitSpeed * 3.6 * 0.03)), side: false }))   // 사람과 부딪힐 때 내 차의 속도 변화는 아주 작다 (약 3%)
+      .concat(meB.impacts.map(x => ({ with: x.wn || thingOf(x.other), speed: Math.round(x.speed * 3.6), dv: Math.round(x.dv * 3.6), side: x.face === 'side' })));
+    const rows = [{ who: '나', hits: meHits, risk: 1 - meHits.reduce((q, x) => q * (1 - hitRisk(x)), 1), fault: f0 ? faultText({ base: f0.base }, f0.car) : '', faultOn: !!f0 }];
+    peds.forEach((q, i) => { const v = Math.round(q.hitSpeed * 3.6), f = pf[i];
+      rows.push({ who: q.label, stat: `충돌 속도 ${v}km/h`, risk: pedRisk(v), hits: [], fault: f ? faultText({ base: f.base }, 100 - f.car) : '', faultOn: !!f }); });
+    involved.filter(b => b.id !== 'me').forEach(b => {
+      const hits = b.impacts.map(x => ({ with: x.wn || thingOf(x.other), speed: Math.round(x.speed * 3.6), dv: Math.round(x.dv * 3.6), side: x.face === 'side' }));
+      rows.push({ who: nameOf(b), hits, risk: 1 - hits.reduce((q, x) => q * (1 - hitRisk(x)), 1), fault: '1차 충돌에 이어진 충돌', faultOn: false });
+    });
+    return rows;
+  }
   return involved.map(b => {
     const hits = b.impacts.map(x => ({ with: x.wn || thingOf(x.other), speed: Math.round(x.speed * 3.6), dv: Math.round(x.dv * 3.6), side: x.face === 'side' }));
     const risk = 1 - hits.reduce((q, x) => q * (1 - hitRisk(x)), 1);
@@ -4108,7 +4118,8 @@ function crashUpdate(dt) {
     $('injAfter').style.animationDelay = (0.5 + G.end.injury.length * 0.9) + 's'; $('injAfter').className = 'inj-after reveal';
     $('injNote').innerHTML = G.end.type === 'ped'
       ? '사망 확률은 차에 치인 보행자의 평균 위험으로, <a href="https://doi.org/10.1016/j.aap.2012.07.022" target="_blank" rel="noopener">Tefft(2013), Accident Analysis &amp; Prevention</a>의 충돌 속도별 추정을 따릅니다. 나이가 많을수록 같은 속도에서도 위험이 더 큽니다.'
-        + (G.end.injury.some(x => x.fault) ? FAULT_NOTE : '')
+        + ' 운전자 사망 확률은 충돌 순간 몸이 겪은 속도 변화(Δv)에 따른 추정치입니다.'
+        + (G.end.injury.some(x => x.faultOn) ? FAULT_NOTE : '')
       : '충격은 충돌 순간 몸이 겪은 속도 변화(Δv)입니다. 사망 확률은 안전벨트를 맨 운전자 기준 추정치로, '
       + '<a href="https://doi.org/10.1080/15389588.2026.2717647" target="_blank" rel="noopener">Ayuningtyas 외(2026), Traffic Injury Prevention</a>'
       + '의 승용차 정면충돌 분석(전체 자료 모델)을 따르고, 충격이 큰 구간은 자료가 적어 '
