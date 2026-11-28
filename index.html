@@ -214,6 +214,8 @@ button.card:hover, button.card:focus-visible { border-color: var(--paint); trans
 .lessons li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; font-size: 14px; line-height: 1.6; color: #d5dbe1; }
 .lessons li::before { content: ""; width: 14px; height: 3px; background: var(--paint); margin-top: 11px; }
 .lessons small { display: block; color: var(--muted); font-size: 12px; }
+.rvideo { margin: 14px 0 0; font-size: 14px; }
+.rvideo a { color: var(--paint); text-decoration: none; border-bottom: 1px solid currentColor; }
 
 /* replay */
 #replayUI { position: absolute; inset: 0; pointer-events: none; }
@@ -406,6 +408,7 @@ button.card:hover, button.card:focus-visible { border-color: var(--paint); trans
       <div class="injury" id="rInjury" hidden></div>
       <p id="rBody"></p>
       <ul class="lessons" id="lessons"></ul>
+      <p class="rvideo" id="rVideo" hidden><a id="rVideoA" target="_blank" rel="noopener"></a></p>
       <div class="row">
         <button class="btn" id="retryBtn">다시 도전</button>
         <button class="btn ghost" id="rewatchBtn">리플레이 다시 보기</button>
@@ -995,6 +998,7 @@ const SCENARIOS = [
       '실제 차에서는 오른쪽 사이드미러와 어깨 너머로 확인합니다. 이 게임에는 거울이 없어 볼 수 없었습니다.',
     ],
     thumb: { s: 90, x: 8.75, lead: 5000 },
+    video: { on: '전동 킥보드', no: 3792, url: 'https://youtube.com/shorts/p8L73mn5FII' },   // 킥보드와 처음 부딪혔을 때만 결과 창에 링크 (사용자 지정)
     replayCam: { cam: [102, 0, 12], tgt: [128, 12, 0], crash: [-7, -7, 6] },   // 리플레이 카메라: s 102, x 0, 높이 12에서 골목 입구 앞(s 128, x 12)을 본다. 충돌 뒤: 충돌 지점에서 s -7, x -7, 높이 6
     hint: '우회전은 자동입니다. 브레이크로 속도를 조절하세요.',
     replay: 'plan', sightLines: false,
@@ -2778,7 +2782,7 @@ function kickStruck(me) {
   G.flags.struckDone = true;
   G.peds.forEach(q => {
     if (!q.kick || q.fly || !pedTouch(q, me.s, me.x, me.yaw || 0)) return;
-    const d = q.dir || 1, kv = q.cv ?? q.v; q.hitSpeed = kv; q.struck = true;
+    const d = q.dir || 1, kv = q.cv ?? q.v; q.hitSpeed = kv; q.hitAt ??= G.t; q.struck = true;
     q.fly = { s: q.s, x: q.x, y: 0.9 * q.scale, vs: d * kv * 0.35, vx: 0, vy: 2.2, r: 0, rr: 3, ground: false, roll: 0, yaw: 0, bounces: 0 };
     q.bk = { s: q.s - d * 0.3, x: q.x, vs: -d * 0.8, vx: 0.5 };
     const rc = { t: G.t, a: 'me', b: 'ped', s: q.s, x: q.x, vs: kv, sideA: 'none', sideB: 'none', dvA: 0.3, dvB: kv, ped: true };
@@ -2792,7 +2796,7 @@ function hitPeds(me) {
   let any = false;
   G.peds.forEach((q, k) => {
     if (q.fly || !pedTouch(q, me.s, me.x, me.yaw || 0)) return;
-    q.hitSpeed = v; any = true;
+    q.hitSpeed = v; q.hitAt ??= G.t; any = true;
     const lowK = clamp((v * 3.6 - 5) / 15, 0, 1);   // 시속 5km → 0, 20km 이상 → 1: 느릴수록 덜 뜨고 덜 돈다 (아주 느리면 밀려 그 자리에 쓰러진다)
     if (q.bike) q.bk = { s: q.s, x: q.x, vs: v * 0.6, vx: (q.x - me.x) * 0.5 + 1 };   // 자전거는 사람과 따로 쓰러져 미끄러진다
     // 사고 재구성에서 흔히 쓰는 범위: 차 속도의 약 85~90%로 앞으로 떨어지고, 높이는 낮게 뜬다
@@ -4887,6 +4891,12 @@ function showResult() {
   $('rVerdict').textContent = verdict; $('rVerdict').className = 'verdict ' + vcls;
   $('rEyebrow').textContent = `BRAKE ALIVE · ${SC.id} ${SC.title}`;
   $('rTitle').textContent = title; $('rSub').textContent = sub; $('rBody').textContent = body;
+  { // 실제 사고 영상 링크: 시나리오에 지정한 상대(video.on)와 처음 부딪혔을 때만 보여 준다
+    const V = SC.video, hs = e.kind === 'crash' && e.type === 'ped' ? G.peds.filter(q => q.hitSpeed).sort((a, b) => (a.hitAt ?? 0) - (b.hitAt ?? 0)) : [];
+    const first = e.kind !== 'crash' ? null : e.type === 'ped' ? (hs[0] && hs[0].label) : e.car ? e.car.label : e.type === 'truck' ? SC.truck.label : e.type === 'bait' && SC.bait ? SC.bait.label : null;
+    const on = !!(V && first && first === V.on);
+    show('rVideo', on); if (on) { const a = $('rVideoA'); a.href = V.url; a.textContent = `▶ 비슷한 실제 사고 · 한문철TV #${V.no}`; }
+  }
   $('rInjury').textContent = '';   // 사망 확률 표는 사고 직후 화면에서만 보여 준다 (결과 화면에서는 반복하지 않음)
   show('rewatchBtn', e.kind === 'crash'); show('nextBtn', !!nextScenario());
   $('record2').textContent = recordText();
