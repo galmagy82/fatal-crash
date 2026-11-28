@@ -969,7 +969,7 @@ const SCENARIOS = [
       zoneStart: -1e4, zoneEnd: 1e4, goal: 1e4, crosswalk: 120, sideRoad: { s: 140, w: 7, len: 120, walk: 2.5, twoWay: true, round: 4 }, mouthCrosswalk: true },   // 골목: 왕복 2차로(폭 7m) + 양쪽 인도 2.5m
     xsig: { yellowAt: 1e9, redAt: 1e9, pedOn: 1e9, pedFlash: 1e9, pedOff: 1e9, greenAt: 1e9 },   // 신호가 바뀌지 않는다: 차량 녹색, 보행자 빨간불
     // 3차로(x 8.75)를 시속 50km로 출발해 코너에 다가갈수록 저절로 줄인다(2.5m/s²). 골목 바로 앞에서 타원으로 우회전(세로 7m, 가로 5m) → 골목 오른쪽 차로(s 138.25)를 따라 +x로. 브레이크만 된다
-    player: { s: 90, v: 13.9, x: 8.75, path: { kind: 'alley', s0: 90, x0: 8.75, approach: 41.25, rx: 5, rs: 7, vcap: 13.9, dec: 2.5, v20: 5.56, vturn: 4.0, goalU: 41.25 + 10 + 70 } },   // 출발점을 횡단보도 쪽으로 30m 당김 (s 60 → 90)
+    player: { s: 90, v: 13.9, x: 8.75, path: { kind: 'alley', s0: 90, x0: 8.75, approach: 41.25, rx: 5, rs: 7, vcap: 13.9, dec: 2.5, vturn: 2.78, vArcEnd: 4.17, goalU: 41.25 + 10 + 70 } },   // 출발점을 횡단보도 쪽으로 30m 당김 (s 60 → 90)
     truck: { type: 'truck', label: '화물차', parked: true, s: 5000, x: 40, up: 0, flat: 0, down: 0, mass: 6, hl: 5, hw: 1.25, height: 3.5 },
     oncoming: [
       { label: '2차로 차', fwd: true, s: 95, x: 5.25, v: 12, color: 0x3c4a3e },
@@ -3738,11 +3738,13 @@ function step(dt) {
   if (onPath) {
     const P = p.path, arcL = pathArcLen(P), arcEnd = P.approach + arcL;
     // 코너를 2/3쯤 돌았으면 가속을 시작한다 (급가속 시간도 이때부터)
-    const exiting = p.u >= P.approach + arcL * 2 / 3;
+    const exiting = P.vArcEnd ? p.u >= arcEnd : p.u >= P.approach + arcL * 2 / 3;   // 16: 회전을 다 마친 뒤에야 보통 가속
     if (exiting && P.doneT === undefined) P.doneT = t;
     // 다가오는 동안: 시속 50km를 유지하다가 코너 바로 앞에서 급하게 줄인다 (감속 6m/s²): 회전 3m 전 v20(시속 20km), 회전 시작점 vturn
     const toArc = P.approach - p.u, v20 = P.v20 || P.vcap, A = 2 * (P.dec || 6);   // dec: 코너 앞 감속 (16은 2.5m/s²로 천천히)
-    const cap = exiting ? (P.vexit || V_MAX) : toArc > 0 ? Math.min(P.vcap, Math.sqrt(v20 * v20 + A * Math.max(0, toArc - 3)), Math.sqrt(P.vturn * P.vturn + A * toArc)) : P.vturn;
+    const cap = exiting ? (P.vexit || V_MAX)
+      : P.vArcEnd ? (toArc > 0 ? Math.min(P.vcap, Math.sqrt(P.vturn * P.vturn + A * toArc)) : P.vturn + (P.vArcEnd - P.vturn) * clamp((p.u - P.approach) / arcL, 0, 1))   // 16: 한 번에 부드럽게 vturn까지 줄이고, 도는 동안 vArcEnd까지 조금씩 올린다
+      : toArc > 0 ? Math.min(P.vcap, Math.sqrt(v20 * v20 + A * Math.max(0, toArc - 3)), Math.sqrt(P.vturn * P.vturn + A * toArc)) : P.vturn;
     if (keys.down) p.v -= 8 * dt;
     else p.v += exiting ? 4.2 * (1 - p.v / (V_MAX * 1.08)) * (P.boost || 1) * dt : 3 * dt;
     p.v = clamp(p.v, 0, cap);   // 상한보다 빠르면 상한까지 (저절로 감속)
